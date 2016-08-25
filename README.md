@@ -6,7 +6,7 @@ Anti-entropy Cassandra cluster tool
 Setup test environment
 ----------------------
 
-Initialize test Cassandra 2.2 cluster (you need docker and docker-compose installed):
+Initialize test Cassandra 2.2 cluster (you need ansible, docker and docker-compose installed):
 
 ```
 make setup
