@@ -124,6 +124,6 @@ if matches > 0:
     exit(0)
 
 
-print "There is no holes... only asses :("
+print "There is no holes"
 cluster.shutdown()
 exit(1)
