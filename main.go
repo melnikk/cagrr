@@ -16,8 +16,8 @@ var workers = flag.Int("w", 1, "Number of concurrent workers")
 func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment) {
 	tokens := node.Tokens()
 	for _, t := range tokens {
-		ranges := t.Ranges(*steps)
-		for _, f := range ranges {
+		frags := t.Fragments(*steps)
+		for _, f := range frags {
 			fmt.Println("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
 			jobs <- f
 		}
@@ -26,8 +26,11 @@ func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment) {
 
 func repairFragment(wid int, fragments <-chan cluster.Fragment) {
 	for f := range fragments {
-		fmt.Println("worker", wid, "processing fragment", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
-		f.Repair()
+		fmt.Println(
+			"worker", wid,
+			"processing fragment", fmt.Sprintf("[%d:%d]", f.Start, f.Finish),
+			"with keyspace", *keyspace)
+		f.Repair(*keyspace)
 	}
 }
 
