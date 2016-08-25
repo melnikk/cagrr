@@ -11,6 +11,8 @@ const (
 	numTokens = 256
 )
 
+var binary string
+
 // Node represents a node in cluster
 type Node struct {
 	Host string
@@ -36,6 +38,14 @@ type Fragment struct {
 	Finish int64
 }
 
+func init() {
+	var lookErr error
+	binary, lookErr = exec.LookPath("nodetool")
+	if lookErr != nil {
+		panic(lookErr)
+	}
+}
+
 // Tokens initializes array of node tokens
 func (n Node) Tokens() []Token {
 	result := make([]Token, numTokens)
@@ -50,10 +60,6 @@ func (t Token) Fragments(steps int) []Fragment {
 
 // Repair fragment of node range
 func (f Fragment) Repair(keyspace string) {
-	binary, lookErr := exec.LookPath("nodetool")
-	if lookErr != nil {
-		panic(lookErr)
-	}
 	node := f.Token.Node
 	env := os.Environ()
 	args := []string{
