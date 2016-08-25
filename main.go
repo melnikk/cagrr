@@ -3,7 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"time"
+
+	"github.com/melnikk/cagrr/lib"
 )
 
 var host = flag.String("h", "localhost", "Address of a node in cluster")
@@ -12,41 +13,37 @@ var keyspace = flag.String("k", "all", "Keyspace to repair")
 var steps = flag.Int("s", 100, "Steps to split token ranges to")
 var workers = flag.Int("w", 1, "Number of concurrent workers")
 
-type repairRange struct {
-	id     string
-	start  int64
-	finish int64
-	result chan bool
-}
-
-func fragmentGenerator(jobs chan<- repairRange) {
-
-}
-
-func repairFragment(id int, segments <-chan repairRange, results chan<- repairRange) {
-	for j := range segments {
-		fmt.Println("worker", id, "processing job", j)
-		time.Sleep(time.Second)
-		j.result <- true
-		results <- j
+func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment) {
+	tokens := node.Tokens()
+	for _, t := range tokens {
+		ranges := t.Ranges(*steps)
+		for _, f := range ranges {
+			fmt.Println("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
+			jobs <- f
+		}
 	}
 }
 
-func repair() {
-	jobs := make(chan repairRange, *workers)
-	results := make(chan repairRange, *workers)
+func repairFragment(wid int, fragments <-chan cluster.Fragment) {
+	for f := range fragments {
+		fmt.Println("worker", wid, "processing fragment", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
+		f.Repair()
+	}
+}
+
+func repair(node cluster.Node) {
+	fmt.Println("Repairing node", node.Host)
+	jobs := make(chan cluster.Fragment, *workers)
+
+	go fragmentGenerator(node, jobs)
+
 	for w := 1; w <= *workers; w++ {
-		go repairFragment(w, jobs, results)
-	}
-	go fragmentGenerator(jobs)
-
-	close(jobs)
-	for a := 1; a <= 9; a++ {
-		<-results
+		go repairFragment(w, jobs)
 	}
 }
 
 func main() {
 	flag.Parse()
-	repair()
+	node := cluster.Node{Host: *host, Port: *port}
+	repair(node)
 }
