@@ -8,7 +8,7 @@ import (
 )
 
 var host = flag.String("h", "localhost", "Address of a node in cluster")
-var port = flag.Int("p", 9042, "JMX port on a node")
+var port = flag.Int("p", 7199, "JMX port on a node")
 var keyspace = flag.String("k", "all", "Keyspace to repair")
 var steps = flag.Int("s", 100, "Steps to split token ranges to")
 var workers = flag.Int("w", 1, "Number of concurrent workers")
