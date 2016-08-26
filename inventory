@@ -1,4 +1,4 @@
 [cassandra]
-cassandrastitcher_cassandra1_1  ansible_connection=docker
-cassandrastitcher_cassandra2_1  ansible_connection=docker
-cassandrastitcher_cassandra3_1  ansible_connection=docker
+cagrr_cassandra1_1
+cagrr_cassandra2_1
+cagrr_cassandra3_1
