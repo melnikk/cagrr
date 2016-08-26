@@ -7,7 +7,7 @@ init:
 	@docker-compose up -d
 
 setup: init
-	ansible-playbook -i inventory provision.yml && \
+	@ansible-playbook -i inventory provision.yml && \
 	docker-compose restart
 
 
@@ -19,5 +19,7 @@ test: holes
 check: init
 	@./tests/stub.py
 
+build:
+	@go build -a
 run:
-	@./src/stitch.py 172.17.0.2
+	@go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 1

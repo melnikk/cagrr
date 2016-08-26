@@ -2,12 +2,15 @@ package cluster
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"os/exec"
-	"syscall"
+	"strconv"
+
+	s "strings"
 )
 
 const (
+	numFields = 8
 	numTokens = 256
 )
 
@@ -28,7 +31,7 @@ type Ring struct {
 type Token struct {
 	Node *Node
 	ID   int64
-	Next *Token
+	Next int64
 }
 
 // Fragment of Token range for repair
@@ -38,40 +41,67 @@ type Fragment struct {
 	Finish int64
 }
 
-func init() {
-	var lookErr error
-	binary, lookErr = exec.LookPath("nodetool")
-	if lookErr != nil {
-		panic(lookErr)
-	}
-}
-
 // Tokens initializes array of node tokens
 func (n Node) Tokens() []Token {
-	result := make([]Token, numTokens)
+	var result []Token
+	args := []string{
+		"-h", n.Host,
+		"-p", fmt.Sprintf("%d", n.Port),
+		"ring"}
+	res, err := nodetool(args)
+	if err != nil {
+		panic(err)
+	}
+	lines := s.Split(res, "\n")
+	var prev int64
+	for _, str := range lines {
+		fields := s.Fields(str)
+		if len(fields) == numFields {
+			i, _ := strconv.ParseInt(fields[7], 10, 64)
+			next := int64(i)
+			if prev == 0 {
+				prev = i
+				continue
+			}
+			token := Token{Node: &n, ID: prev, Next: next}
+
+			result = append(result, token)
+			prev = next
+		}
+	}
+
 	return result
 }
 
 // Fragments is a set of ranges in Token
 func (t Token) Fragments(steps int) []Fragment {
-	result := make([]Fragment, steps)
+	var result []Fragment
+	step := (t.Next - t.ID) / int64(steps)
+	for i := t.ID; i < t.Next; i += step {
+		frag := Fragment{Token: &t, Start: i, Finish: i + step}
+		result = append(result, frag)
+	}
 	return result
 }
 
 // Repair fragment of node range
-func (f Fragment) Repair(keyspace string) {
+func (f Fragment) Repair(keyspace string) (string, error) {
 	node := f.Token.Node
-	env := os.Environ()
 	args := []string{
-		"nodetool",
 		"-h", node.Host,
 		"-p", fmt.Sprintf("%d", node.Port),
 		"repair", keyspace,
-		"-pr",
 		"-st", fmt.Sprintf("%d", f.Start),
 		"-et", fmt.Sprintf("%d", f.Finish)}
-	execErr := syscall.Exec(binary, args, env)
-	if execErr != nil {
-		panic(execErr)
+
+	return nodetool(args)
+}
+
+func nodetool(args []string) (string, error) {
+	out, err := exec.Command("nodetool", s.Join(args, " ")).Output()
+	if err != nil {
+		fmt.Println("Alarma:", string(out))
+		log.Fatal(err)
 	}
+	return string(out), err
 }

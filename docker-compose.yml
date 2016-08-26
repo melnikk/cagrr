@@ -5,6 +5,11 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.10
+    environment:
+      JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.10"
+      LOCAL_JMX: "no"
+    volumes:
+      - ./jmxremote.password:/etc/cassandra/jmxremote.password
 
   cassandra2:
     image: cassandra:2.2

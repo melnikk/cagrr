@@ -17,6 +17,10 @@ keyspace = 'fedikeyspace'
 table = 'test_table'
 userid = 'testuser'
 
+dead_node = 3
+original_number = 1
+new_number = 5
+tries = 1000
 
 def create_session(cl):
     sess = cl.connect()
@@ -107,12 +111,6 @@ def make_hole():
                     if start_node(dead_node):
                         return True
     return False
-
-
-dead_node = 1
-original_number = 1
-new_number = 5
-tries = 1000
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'make':

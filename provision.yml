@@ -8,4 +8,5 @@
     - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_throttle_in_kb: 1024' line='hinted_handoff_throttle_in_kb: 1'"
     - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hints_delivery_threads: 2' line='max_hints_delivery_threads: 1'"
     - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^batchlog_replay_throttle_in_kb: 1024' line='batchlog_replay_throttle_in_kb: 1'"
-
+    - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='jmxremote.authenticate=true' line='  JVM_OPTS=\"$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false\"'"
+    - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=absent regexp='/etc/cassandra/jmxremote.password'"
