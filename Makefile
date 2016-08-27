@@ -8,7 +8,7 @@ init:
 
 setup: init
 	@ansible-playbook -i inventory provision.yml && \
-	docker-compose restart
+	docker-compose restart cassandra1 cassandra2 cassandra3
 
 
 holes: init
@@ -21,5 +21,6 @@ check: init
 
 build:
 	@go build -a
+
 run:
-	@go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 1
+	@go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 10

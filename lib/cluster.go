@@ -42,8 +42,8 @@ type Fragment struct {
 }
 
 // Tokens initializes array of node tokens
-func (n Node) Tokens() []Token {
-	var result []Token
+func (n Node) Tokens() map[int64]Token {
+	result := make(map[int64]Token)
 	args := []string{
 		"-h", n.Host,
 		"-p", fmt.Sprintf("%d", n.Port),
@@ -57,15 +57,18 @@ func (n Node) Tokens() []Token {
 	for _, str := range lines {
 		fields := s.Fields(str)
 		if len(fields) == numFields {
-			i, _ := strconv.ParseInt(fields[7], 10, 64)
-			next := int64(i)
+			i, err := strconv.ParseInt(fields[7], 10, 64)
+			if err != nil {
+				continue
+			}
+			next := i
 			if prev == 0 {
 				prev = i
 				continue
 			}
 			token := Token{Node: &n, ID: prev, Next: next}
 
-			result = append(result, token)
+			result[prev] = token
 			prev = next
 		}
 	}
@@ -100,7 +103,6 @@ func (f Fragment) Repair(keyspace string) (string, error) {
 func nodetool(args []string) (string, error) {
 	out, err := exec.Command("nodetool", s.Join(args, " ")).Output()
 	if err != nil {
-		fmt.Println("Alarma:", string(out))
 		log.Fatal(err)
 	}
 	return string(out), err

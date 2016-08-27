@@ -51,8 +51,9 @@ func processResult(rid int, result string) {
 
 func repair(node cluster.Node) {
 	fmt.Println("Repairing node", node.Host)
-	jobs := make(chan cluster.Fragment, *workers)
-	results := make(chan string, *workers)
+	w := *workers
+	jobs := make(chan cluster.Fragment, w)
+	results := make(chan string, w)
 
 	fmt.Println("Starting goroutines")
 	go fragmentGenerator(node, jobs, results)

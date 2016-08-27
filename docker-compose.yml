@@ -1,20 +1,21 @@
 version: '2'
 services:
+  #----------------------------------- Cassanra cluster
   cassandra1:
     image: cassandra:2.2
     networks:
-      app_net:
+      app:
         ipv4_address: 172.16.238.10
     environment:
       JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.10"
       LOCAL_JMX: "no"
     volumes:
-      - ./jmxremote.password:/etc/cassandra/jmxremote.password
+      - ./docker/cassandra/jmxremote.password:/etc/cassandra/jmxremote.password
 
   cassandra2:
     image: cassandra:2.2
     networks:
-      app_net:
+      app:
         ipv4_address: 172.16.238.11
     environment:
       CASSANDRA_SEEDS: "172.16.238.10"
@@ -22,13 +23,72 @@ services:
   cassandra3:
     image: cassandra:2.2
     networks:
-      app_net:
+      app:
         ipv4_address: 172.16.238.12
     environment:
       CASSANDRA_SEEDS: "172.16.238.10"
 
+  #----------------------------------------- Metrics
+  # Graphite
+  # Grafana
+
+  #----------------------------------------- Logs
+  # Logstash+logspout
+  # Elasticsearch
+  # Kibana
+
+  elasticsearch:
+    image: elasticsearch:5
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    networks:
+      - elk
+
+  logstash:
+    image: logstash:5
+    command: -f /opt/logstash/logstash.conf
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
+    environment:
+      LOGSPOUT: ignore
+    volumes:
+      - ./docker/logstash/:/opt/logstash/
+
+
+  logspout:
+    build: ./docker/logspout
+    environment:
+      ROUTE_URIS: "logstash+tcp://logstash:5000"
+      DEBUG: "true"
+    depends_on:
+      - logstash
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - elk
+
+
+  kibana:
+    image: kibana:5
+    depends_on:
+      - elasticsearch
+    networks:
+      elk:
+        ipv4_address: 172.16.237.5
+
 networks:
-  app_net:
+  elk:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.237.0/24
+        gateway: 172.16.237.1
+  app:
     driver: bridge
     driver_opts:
       com.docker.network.enable_ipv6: "false"
