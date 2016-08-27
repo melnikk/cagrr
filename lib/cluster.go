@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	s "strings"
+	"sort"
 )
 
 const (
@@ -42,7 +43,7 @@ type Fragment struct {
 }
 
 // Tokens initializes array of node tokens
-func (n Node) Tokens() map[int64]Token {
+func (n Node) Tokens() (map[int64]Token, []int64) {
 	result := make(map[int64]Token)
 	args := []string{
 		"-h", n.Host,
@@ -72,8 +73,13 @@ func (n Node) Tokens() map[int64]Token {
 			prev = next
 		}
 	}
+	var keys []int64
+	for k := range result {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
 
-	return result
+	return result, keys
 }
 
 // Fragments is a set of ranges in Token
@@ -81,7 +87,14 @@ func (t Token) Fragments(steps int) []Fragment {
 	var result []Fragment
 	step := (t.Next - t.ID) / int64(steps)
 	for i := t.ID; i < t.Next; i += step {
-		frag := Fragment{Token: &t, Start: i, Finish: i + step}
+		var finish int64
+		switch {
+		case i+step>t.Next:
+			finish = t.Next
+		default:
+			finish = i+step
+		}
+		frag := Fragment{Token: &t, Start: i, Finish: finish}
 		result = append(result, frag)
 	}
 	return result

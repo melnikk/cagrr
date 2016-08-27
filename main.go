@@ -15,9 +15,10 @@ var workers = flag.Int("w", 1, "Number of concurrent workers")
 
 func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment, results chan<- string) {
 	fmt.Println("Entering Fragment generator")
-	tokens := node.Tokens()
+	tokens, keys := node.Tokens()
 	fmt.Println(tokens)
-	for _, t := range tokens {
+	for k := range keys {
+		t := tokens[k]
 		frags := t.Fragments(*steps)
 		for _, f := range frags {
 			fmt.Println("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))

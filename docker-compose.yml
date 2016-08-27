@@ -2,18 +2,16 @@ version: '2'
 services:
   #----------------------------------- Cassanra cluster
   cassandra1:
-    image: cassandra:2.2
+    build: ./docker/cassandra
     networks:
       app:
         ipv4_address: 172.16.238.10
     environment:
       JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.10"
       LOCAL_JMX: "no"
-    volumes:
-      - ./docker/cassandra/jmxremote.password:/etc/cassandra/jmxremote.password
 
   cassandra2:
-    image: cassandra:2.2
+    build: ./docker/cassandra
     networks:
       app:
         ipv4_address: 172.16.238.11
@@ -21,7 +19,7 @@ services:
       CASSANDRA_SEEDS: "172.16.238.10"
 
   cassandra3:
-    image: cassandra:2.2
+    build: ./docker/cassandra
     networks:
       app:
         ipv4_address: 172.16.238.12
@@ -31,7 +29,19 @@ services:
   #----------------------------------------- Metrics
   # Graphite
   # Grafana
+  graphite:
+    image: nickstenning/graphite
+    networks:
+      app:
+        ipv4_address: 172.16.238.4
+      tools:
+        ipv4_address: 172.16.237.4
 
+  grafana:
+    image: grafana/grafana
+    networks:
+      tools:
+        ipv4_address: 172.16.237.7
   #----------------------------------------- Logs
   # Logstash+logspout
   # Elasticsearch
@@ -42,7 +52,7 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     networks:
-      - elk
+      - tools
 
   logstash:
     image: logstash:5
@@ -50,7 +60,7 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - elk
+      - tools
     environment:
       LOGSPOUT: ignore
     volumes:
@@ -59,6 +69,7 @@ services:
 
   logspout:
     build: ./docker/logspout
+    restart: "on-failure:100"
     environment:
       ROUTE_URIS: "logstash+tcp://logstash:5000"
       DEBUG: "true"
@@ -67,7 +78,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - elk
+      - tools
 
 
   kibana:
@@ -75,11 +86,11 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      elk:
+      tools:
         ipv4_address: 172.16.237.5
 
 networks:
-  elk:
+  tools:
     driver: bridge
     driver_opts:
       com.docker.network.enable_ipv6: "false"
