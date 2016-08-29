@@ -33,9 +33,14 @@ Repair your cluster:
 make run
 ```
 
-Analyze your logs in Kibana interface available at:
+Analyze your logs in [Kibana](https://github.com/elastic/kibana) interface available at:
 ```
-http://172.16.237.5:5601
+http://172.16.237.50:5601
+```
+
+Check your metrics in [Grafana](https://github.com/grafana/grafana) interface available at:
+```
+http://172.16.237.30:3000
 ```
 
 ##Troubleshooting

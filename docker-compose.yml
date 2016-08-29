@@ -41,10 +41,15 @@ services:
         ipv4_address: 172.16.237.4
 
   grafana:
-    image: grafana/grafana
+    build: docker/grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_DASHBOARDS_JSON_ENABLED: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_METRICS_GRAPHITE_ADDRESS: "graphite"
     networks:
       tools:
-        ipv4_address: 172.16.237.7
+        ipv4_address: 172.16.237.30
 
   diamond:
     image: lesaux/diamond-containercollector
@@ -63,24 +68,25 @@ services:
   # Kibana
 
   elasticsearch:
-    image: elasticsearch:5
+    image: elasticsearch:2.3
     environment:
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     networks:
-      - tools
+      tools:
+        ipv4_address: 172.16.237.20
 
   logstash:
-    image: logstash:5
+    image: logstash:2.3
     command: -f /opt/logstash/logstash.conf
     depends_on:
       - elasticsearch
     networks:
-      - tools
+      tools:
+        ipv4_address: 172.16.237.25
     environment:
       LOGSPOUT: ignore
     volumes:
-      - ./docker/logstash/:/opt/logstash/
-
+      - ./docker/logstash/logstash.conf:/opt/logstash/logstash.conf:ro
 
   logspout:
     build: ./docker/logspout
@@ -93,16 +99,18 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - tools
-
+      tools:
+        ipv4_address: 172.16.237.15
 
   kibana:
-    image: kibana:5
+    image: kibana:4.5
     depends_on:
       - elasticsearch
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=300"
     networks:
       tools:
-        ipv4_address: 172.16.237.5
+        ipv4_address: 172.16.237.50
 
 networks:
   tools:

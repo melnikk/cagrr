@@ -2,3 +2,9 @@
 cagrr_cassandra1_1
 cagrr_cassandra2_1
 cagrr_cassandra3_1
+
+[grafana]
+cagrr_grafana_1
+
+[elk]
+cagrr_elasticsearch_1

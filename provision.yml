@@ -1,6 +1,6 @@
 ---
 
-- hosts: all
+- hosts: cassandra
   connection: docker
   tasks:
     - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_enabled: true' line='hinted_handoff_enabled: false'"
@@ -10,3 +10,58 @@
     - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^batchlog_replay_throttle_in_kb: 1024' line='batchlog_replay_throttle_in_kb: 1'"
     - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='jmxremote.authenticate=true' line='  JVM_OPTS=\"$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false\"'"
     - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=absent regexp='/etc/cassandra/jmxremote.password'"
+
+- hosts: grafana
+  connection: local
+  tasks:
+    - name: create datasource in grafana
+      uri:
+        url: http://172.16.237.30:3000/api/datasources
+        HEADER_Content-Type: "application/json"
+        method: POST
+        user: admin
+        password: admin
+        body: "{{ lookup('file','docker/grafana/datasource.json') }}"
+        force_basic_auth: yes
+        status_code: 200
+        body_format: json
+      retries: 5
+      delay: 10
+    - name: create dashboards in grafana
+      uri:
+        url: http://172.16.237.30:3000/api/dashboards/db
+        HEADER_Content-Type: "application/json"
+        method: POST
+        user: admin
+        password: admin
+        body: "{{ lookup('file','docker/grafana/dashboards/gcm.json') }}"
+        force_basic_auth: yes
+        status_code: 200
+        body_format: json
+      retries: 5
+      delay: 10
+
+- hosts: elk
+  connection: local
+  tasks:
+    - name: create logstash index in elasticsearch
+      uri:
+        url: http://172.16.237.20:9200/.kibana/index-pattern/logstash-*?op_type=create
+        HEADER_Content-Type: "application/json"
+        method: POST
+        body: "{{ lookup('file','docker/kibana/index.json') }}"
+        status_code: 201
+        body_format: json
+      retries: 10
+      delay: 20
+
+    - name: make logstash index as default
+      uri:
+        url: http://172.16.237.20:9200/.kibana/config/4.5.4/_update
+        HEADER_Content-Type: "application/json"
+        method: POST
+        body: "{{ lookup('file','docker/kibana/default.json') }}"
+        status_code: 200
+        body_format: json
+      retries: 10
+      delay: 20
