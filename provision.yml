@@ -3,13 +3,16 @@
 - hosts: cassandra
   connection: docker
   tasks:
-    - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_enabled: true' line='hinted_handoff_enabled: false'"
-    - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hint_window_in_ms: 10800000' line='max_hint_window_in_ms: 1'"
-    - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_throttle_in_kb: 1024' line='hinted_handoff_throttle_in_kb: 1'"
-    - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hints_delivery_threads: 2' line='max_hints_delivery_threads: 1'"
-    - lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^batchlog_replay_throttle_in_kb: 1024' line='batchlog_replay_throttle_in_kb: 1'"
-    - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='jmxremote.authenticate=true' line='  JVM_OPTS=\"$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false\"'"
-    - lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=absent regexp='/etc/cassandra/jmxremote.password'"
+    - name: Disable HintedHandoff
+      lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_enabled: true' line='hinted_handoff_enabled: false'"
+    - name: Disable Hint window
+      lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hint_window_in_ms: 10800000' line='max_hint_window_in_ms: 1'"
+    - name: Disable HintedHandoff throttle
+      lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^hinted_handoff_throttle_in_kb: 1024' line='hinted_handoff_throttle_in_kb: 1'"
+    - name: Cut Hints delivery threads
+      lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hints_delivery_threads: 2' line='max_hints_delivery_threads: 1'"
+    - name: Disable JMX authentication in Cassandra
+      lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='jmxremote.authenticate=true' line='  JVM_OPTS=\"$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false\"'"
 
 - hosts: grafana
   connection: local
@@ -34,12 +37,14 @@
         method: POST
         user: admin
         password: admin
-        body: "{{ lookup('file','docker/grafana/dashboards/gcm.json') }}"
+        body: "{{ lookup('file',item) }}"
         force_basic_auth: yes
         status_code: 200
         body_format: json
       retries: 5
       delay: 10
+      with_fileglob:
+        - ./docker/grafana/dashboards/*
 
 - hosts: elk
   connection: local

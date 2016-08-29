@@ -41,7 +41,7 @@ services:
         ipv4_address: 172.16.237.4
 
   grafana:
-    build: docker/grafana
+    image: grafana/grafana
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_DASHBOARDS_JSON_ENABLED: "true"

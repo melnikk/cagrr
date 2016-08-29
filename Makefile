@@ -7,7 +7,7 @@ init:
 	@docker-compose up -d
 
 setup: init
-	@ansible-playbook -i inventory provision.yml && \
+	@ansible-playbook -vvvv -i inventory provision.yml && \
 	docker-compose restart cassandra1 cassandra2 cassandra3
 
 
