@@ -2,7 +2,6 @@ package cluster
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"strconv"
 
@@ -11,10 +10,7 @@ import (
 
 const (
 	numFields = 8
-	numTokens = 256
 )
-
-var binary string
 
 type int64arr []int64
 func (a int64arr) Len() int { return len(a) }
@@ -41,9 +37,16 @@ type Token struct {
 
 // Fragment of Token range for repair
 type Fragment struct {
+	ID     int
 	Token  *Token
 	Start  int64
 	Finish int64
+}
+
+type RepairResult struct {
+	Frag	Fragment
+	Message	string
+	Error	error
 }
 
 // Tokens initializes array of node tokens
@@ -101,7 +104,7 @@ func (t Token) Fragments(steps int) []Fragment {
 }
 
 // Repair fragment of node range
-func (f Fragment) Repair(keyspace string) (string, error) {
+func (f Fragment) Repair(keyspace string) (RepairResult, error) {
 	node := f.Token.Node
 	args := []string{
 		"-h", node.Host,
@@ -110,13 +113,17 @@ func (f Fragment) Repair(keyspace string) (string, error) {
 		"-st", fmt.Sprintf("%d", f.Start),
 		"-et", fmt.Sprintf("%d", f.Finish)}
 
-	return nodetool(args)
+	str, err := nodetool(args)
+
+	result := RepairResult{
+		Frag: f,
+		Message: str,
+		Error: err,
+	}
+	return result, err
 }
 
 func nodetool(args []string) (string, error) {
 	out, err := exec.Command("nodetool", s.Join(args, " ")).Output()
-	if err != nil {
-		log.Fatal(err)
-	}
 	return string(out), err
 }

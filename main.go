@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/Sirupsen/logrus"
     	"github.com/sohlich/elogrus"
     	"gopkg.in/olivere/elastic.v3"
@@ -20,83 +19,131 @@ var workers = flag.Int("w", 1, "Number of concurrent workers")
 
 
 var counter int = 0
-var log *logrus.Logger
+var log *logrus.Logger = logrus.New()
 
-func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment, results chan<- string) {
-	log.Infoln("Entering Fragment generator")
+func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment) {
+
+	log.WithFields(logrus.Fields{
+		"keyspace": *keyspace,
+		}).Info("Fragment generator started")
+
 	tokens, keys := node.Tokens()
 
-	for k := range keys {
-		t := tokens[int64(k)]
+	if len(keys)==0 {
+		log.WithFields(logrus.Fields{
+			"keyspace": *keyspace,
+			}).Error("Empty token ring")
+	}
+
+	for _, k := range keys {
+		t := tokens[k]
+		log.WithFields(logrus.Fields{
+			"token": t.ID,
+			"next": t.Next,
+			}).Info("Generating fragments from token")
+
 		frags := t.Fragments(*steps)
 		for _, f := range frags {
-			log.Infoln("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
+			counter ++
+			f.ID = counter
+			log.WithFields(logrus.Fields{
+				"fid": f.ID,
+				"start": f.Start,
+				"finish": f.Finish,
+				"token": t.ID,
+				"keyspace": *keyspace,
+				}).Info("Fragment generated")
+
 			jobs <- f
 		}
 	}
+
+
+	close(jobs)
 }
 
-func repairFragment(wid int, fragments <-chan cluster.Fragment, results chan<- string) {
-	log.Infoln("Starting worker", wid)
+func repairFragment(wid int, fragments <-chan cluster.Fragment, results chan<- cluster.RepairResult) {
+
+	log.WithFields(logrus.Fields{
+        	"worker": wid,
+    		}).Info("Worker started")
+
 	for f := range fragments {
-		log.Infoln(
-			"worker", wid,
-			"processing fragment", fmt.Sprintf("[%d:%d]", f.Start, f.Finish),
-			"with keyspace", *keyspace)
-		str, err := f.Repair(*keyspace)
-		if err != nil {
-			log.Panic(err)
-			panic(err)
+		logFields := logrus.Fields{
+			"fid": f.ID,
+			"worker": wid,
+			"start": f.Start,
+			"finish": f.Finish,
+			"keyspace": *keyspace,
 		}
-		counter ++
-		results <- str
+		log.WithFields(logFields).Info("Processing fragment")
+
+		res, err := f.Repair(*keyspace)
+		if err != nil {
+			log.WithFields(logFields).Error(err)
+		}
+		results <- res
 	}
 }
 
-func processResult(rid int, result string) {
-	log.Infoln(fmt.Sprintf("Result [%d]: %s", rid, result))
+func processResult(rid int, result cluster.RepairResult) {
+
+	log.WithFields(logrus.Fields{
+		"fid": result.Frag.ID,
+        	"result": rid,
+        	"message":  result.Message,
+    		}).Info("Processing result")
 }
 
 func repair(node cluster.Node) {
-	log.Infoln("Repairing node", node.Host)
+
+	log.Info("Repairing node")
+
 	w := *workers
 	jobs := make(chan cluster.Fragment, w)
-	results := make(chan string, w)
+	results := make(chan cluster.RepairResult, w)
 
-	log.Infoln("Starting goroutines")
+
 
 	for w := 1; w <= *workers; w++ {
+
+		log.WithFields(logrus.Fields{
+			"worker": w,
+			}).Info("Starting worker")
+
 		go repairFragment(w, jobs, results)
 	}
 
-	go fragmentGenerator(node, jobs, results)
 
-	for i :=0; i<counter; i++  {
-		 <- results
-		//processResult(counter, res)
+	fragmentGenerator(node, jobs)
+
+	for res := range results  {
+		processResult(counter, res)
 	}
 }
 
 func main() {
+
 	flag.Parse()
 
-	log := logrus.New()
-    	client, err := elastic.NewClient(elastic.SetURL(os.Getenv("ELASTICSEARCH_URL")))
+	node := cluster.Node{Host: *host, Port: *port}
+	url := os.Getenv("ELASTICSEARCH_URL")
+	index := "cagrr"
+
+    	client, err := elastic.NewClient(elastic.SetURL(url))
     	if err != nil {
-        	log.Panic(err)
+        	log.WithFields(logrus.Fields{
+			"url":	url,
+			}).Panic(err)
     	}
-    	hook, err := elogrus.NewElasticHook(client, "localhost", logrus.DebugLevel, "mylog")
+    	hook, err := elogrus.NewElasticHook(client, node.Host, logrus.DebugLevel, index)
     	if err != nil {
-        	log.Panic(err)
+        	log.WithFields(logrus.Fields{
+			"url":	url,
+			"index": index,
+			}).Panic(err)
     	}
     	log.Hooks.Add(hook)
 
-    	log.WithFields(logrus.Fields{
-        	"name": "joe",
-        	"age":  42,
-    	}).Error("Hello world!")
-
-
-	node := cluster.Node{Host: *host, Port: *port}
 	repair(node)
 }
