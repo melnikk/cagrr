@@ -3,8 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-
+	"github.com/Sirupsen/logrus"
+    	"github.com/sohlich/elogrus"
+    	"gopkg.in/olivere/elastic.v3"
+	//graphite "github.com/go-kit/kit/metrics/graphite"
 	"github.com/melnikk/cagrr/lib"
+	"os"
 )
 
 var host = flag.String("h", "localhost", "Address of a node in cluster")
@@ -13,65 +17,86 @@ var keyspace = flag.String("k", "all", "Keyspace to repair")
 var steps = flag.Int("s", 100, "Steps to split token ranges to")
 var workers = flag.Int("w", 1, "Number of concurrent workers")
 
+
+
+var counter int = 0
+var log *logrus.Logger
+
 func fragmentGenerator(node cluster.Node, jobs chan<- cluster.Fragment, results chan<- string) {
-	fmt.Println("Entering Fragment generator")
+	log.Infoln("Entering Fragment generator")
 	tokens, keys := node.Tokens()
-	fmt.Println(tokens)
+
 	for k := range keys {
-		t := tokens[k]
+		t := tokens[int64(k)]
 		frags := t.Fragments(*steps)
 		for _, f := range frags {
-			fmt.Println("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
+			log.Infoln("generated fragment ", fmt.Sprintf("[%d:%d]", f.Start, f.Finish))
 			jobs <- f
 		}
 	}
-
-	close(jobs)
-	results <- "ok"
 }
 
 func repairFragment(wid int, fragments <-chan cluster.Fragment, results chan<- string) {
-	fmt.Println("Starting worker", wid)
+	log.Infoln("Starting worker", wid)
 	for f := range fragments {
-		fmt.Println(
+		log.Infoln(
 			"worker", wid,
 			"processing fragment", fmt.Sprintf("[%d:%d]", f.Start, f.Finish),
 			"with keyspace", *keyspace)
 		str, err := f.Repair(*keyspace)
 		if err != nil {
-			fmt.Println("error")
+			log.Panic(err)
 			panic(err)
 		}
+		counter ++
 		results <- str
 	}
 }
 
 func processResult(rid int, result string) {
-	fmt.Println(fmt.Sprintf("Result [%d]: %s", rid, result))
+	log.Infoln(fmt.Sprintf("Result [%d]: %s", rid, result))
 }
 
 func repair(node cluster.Node) {
-	fmt.Println("Repairing node", node.Host)
+	log.Infoln("Repairing node", node.Host)
 	w := *workers
 	jobs := make(chan cluster.Fragment, w)
 	results := make(chan string, w)
 
-	fmt.Println("Starting goroutines")
-	go fragmentGenerator(node, jobs, results)
+	log.Infoln("Starting goroutines")
 
 	for w := 1; w <= *workers; w++ {
 		go repairFragment(w, jobs, results)
 	}
 
-	counter := 0
-	for res := range results {
-		processResult(counter, res)
-		counter++
+	go fragmentGenerator(node, jobs, results)
+
+	for i :=0; i<counter; i++  {
+		 <- results
+		//processResult(counter, res)
 	}
 }
 
 func main() {
 	flag.Parse()
+
+	log := logrus.New()
+    	client, err := elastic.NewClient(elastic.SetURL(os.Getenv("ELASTICSEARCH_URL")))
+    	if err != nil {
+        	log.Panic(err)
+    	}
+    	hook, err := elogrus.NewElasticHook(client, "localhost", logrus.DebugLevel, "mylog")
+    	if err != nil {
+        	log.Panic(err)
+    	}
+    	log.Hooks.Add(hook)
+
+    	log.WithFields(logrus.Fields{
+        	"name": "joe",
+        	"age":  42,
+    	}).Error("Hello world!")
+
+
 	node := cluster.Node{Host: *host, Port: *port}
 	repair(node)
 }

@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	s "strings"
-	"sort"
 )
 
 const (
@@ -16,6 +15,11 @@ const (
 )
 
 var binary string
+
+type int64arr []int64
+func (a int64arr) Len() int { return len(a) }
+func (a int64arr) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
 
 // Node represents a node in cluster
 type Node struct {
@@ -55,6 +59,7 @@ func (n Node) Tokens() (map[int64]Token, []int64) {
 	}
 	lines := s.Split(res, "\n")
 	var prev int64
+	var keys []int64
 	for _, str := range lines {
 		fields := s.Fields(str)
 		if len(fields) == numFields {
@@ -62,6 +67,7 @@ func (n Node) Tokens() (map[int64]Token, []int64) {
 			if err != nil {
 				continue
 			}
+			keys = append(keys, i)
 			next := i
 			if prev == 0 {
 				prev = i
@@ -73,12 +79,6 @@ func (n Node) Tokens() (map[int64]Token, []int64) {
 			prev = next
 		}
 	}
-	var keys []int64
-	for k := range result {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-
 	return result, keys
 }
 
