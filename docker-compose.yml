@@ -44,7 +44,6 @@ services:
     image: grafana/grafana
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_DASHBOARDS_JSON_ENABLED: "true"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_METRICS_GRAPHITE_ADDRESS: "graphite"
     networks:
