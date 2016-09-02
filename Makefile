@@ -23,4 +23,4 @@ build:
 	@go build -a
 
 run:
-	ELASTICSEARCH_URL=http://172.16.237.20:9200 GRAPHITE_URL=http://172.16.237.4:2300 go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 10
+	ELASTICSEARCH_URL=http://172.16.237.20:9200 GRAPHITE_URL=172.16.237.4:2003 go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 2

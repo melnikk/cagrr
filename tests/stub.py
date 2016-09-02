@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
+import random
+import sys
+import time
+
+import subprocess32
 from cassandra import ConsistencyLevel
 from cassandra.cluster import Cluster
-from cassandra.policies import WhiteListRoundRobinPolicy, DowngradingConsistencyRetryPolicy
+from cassandra.policies import DowngradingConsistencyRetryPolicy
 from cassandra.query import tuple_factory
-
-import time
-import logging
-import sys
-import subprocess32
 
 hosts = ['172.16.238.12']
 
@@ -17,7 +17,8 @@ keyspace = 'fedikeyspace'
 table = 'test_table'
 userid = 'testuser'
 
-dead_node = 3
+random.seed()
+dead_node = random.randrange(1, 3, 1)
 original_number = 1
 new_number = 5
 tries = 1000
@@ -83,7 +84,7 @@ def start_node(index):
     res = run_command(comm)
     if res == 0:
         print "Node %d started" % index
-        time.sleep(15)
+        time.sleep(10)
         return True
     return False
 

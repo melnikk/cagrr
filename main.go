@@ -102,11 +102,10 @@ func repairFragment(wid int, fragments <-chan cluster.Fragment, results chan<- c
 	}
 }
 
-func processResult(rid int, result cluster.RepairResult) {
+func processResult(result cluster.RepairResult) {
 
 	log.WithFields(logrus.Fields{
 		"fid":     result.Frag.ID,
-		"result":  rid,
 		"message": result.Message,
 	}).Info("Processing result")
 }
@@ -131,7 +130,7 @@ func repair(node cluster.Node) {
 	}
 
 	for res := range results {
-		processResult(counter, res)
+		processResult(res)
 	}
 }
 
@@ -149,9 +148,10 @@ func main() {
 
 func initMetrics() {
 	addr, _ := net.ResolveTCPAddr("tcp", os.Getenv("GRAPHITE_URL"))
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "cagrr", addr)
 	instr = Metrics{
 		fragmentCount: metrics.NewRegisteredCounter("fragmentCount", metrics.DefaultRegistry),
+		errorCount:    metrics.NewRegisteredCounter("errorCount", metrics.DefaultRegistry),
 		repairTime:    metrics.NewRegisteredMeter("repairTime", metrics.DefaultRegistry),
 	}
 }
