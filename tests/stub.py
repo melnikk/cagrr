@@ -18,7 +18,7 @@ table = 'test_table'
 userid = 'testuser'
 
 random.seed()
-dead_node = random.randrange(1, 3, 1)
+dead_node = random.randint(1, 3)
 original_number = 1
 new_number = 5
 tries = 1000
