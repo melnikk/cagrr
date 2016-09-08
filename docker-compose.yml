@@ -1,6 +1,6 @@
 version: '2'
 services:
-  #----------------------------------- Cassanra cluster
+  #----------------------------------- Cassanra cluster example
   cassandra1:
     build: ./docker/cassandra
     restart: "on-failure:100"
@@ -29,88 +29,89 @@ services:
     environment:
       CASSANDRA_SEEDS: "172.16.238.10"
 
-  #----------------------------------------- Metrics
-  # Graphite
-  # Grafana
+#----------------------------------------- Metrics
+  # Graphite + Carbon - metric DB and receiver
   #graphite:
   #  image: nickstenning/graphite
+  #    networks:
+  #      app:
+  #        ipv4_address: 172.16.238.4
+  #      tools:
+  #        ipv4_address: 172.16.237.4
+
+  # Grafana - metric visualization
+  #grafana:
+  #  image: grafana/grafana
+  #    environment:
+  #      GF_AUTH_ANONYMOUS_ENABLED: "true"
+  #      GF_USERS_ALLOW_SIGN_UP: "false"
+  #      GF_METRICS_GRAPHITE_ADDRESS: "graphite"
+  #    networks:
+  #      tools:
+  #        ipv4_address: 172.16.237.30
+
+  # Diamond - metric collector
+  #diamond:
+  #    image: lesaux/diamond-containercollector
+  #    volumes:
+  #      - /var/run/docker.sock:/var/run/docker.sock:ro
+  #      - /proc:/host_proc:ro
+  #    environment:
+  #      - GRAPHITE_HOST=graphite
+  #      - DOCKER_HOSTNAME=nodename
+  #      - INTERVAL=5
+  #    networks:
+  #      - tools
+#----------------------------------------- Logs
+# Elasticsearch - log DB
+  #elasticsearch:
+  #  image: elasticsearch:2.3
+  #  environment:
+  #    ES_JAVA_OPTS: "-Xms512m -Xmx512m"
   #  networks:
-  #    app:
-  #      ipv4_address: 172.16.238.4
   #    tools:
-  #      ipv4_address: 172.16.237.4
+  #      ipv4_address: 172.16.237.20
 
-#  grafana:
-#    image: grafana/grafana
-#    environment:
-#      GF_AUTH_ANONYMOUS_ENABLED: "true"
-#      GF_USERS_ALLOW_SIGN_UP: "false"
-#      GF_METRICS_GRAPHITE_ADDRESS: "graphite"
-#    networks:
-#      tools:
-#        ipv4_address: 172.16.237.30
+# Logstash - log receiver
+  #logstash:
+  #  image: logstash:2.3
+  #  command: -f /opt/logstash/logstash.conf
+  #  depends_on:
+  #    - elasticsearch
+  #  networks:
+  #    tools:
+  #      ipv4_address: 172.16.237.25
+  #  environment:
+  #    LOGSPOUT: ignore
+  #  volumes:
+  #    - ./docker/logstash/logstash.conf:/opt/logstash/logstash.conf:ro
 
-#  diamond:
-#    image: lesaux/diamond-containercollector
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
-#      - /proc:/host_proc:ro
-#    environment:
-#      - GRAPHITE_HOST=graphite
-#      - DOCKER_HOSTNAME=cagrr-node1
-#      - INTERVAL=5
-#    networks:
-#      - tools
-  #----------------------------------------- Logs
-  # Logstash+logspout
-  # Elasticsearch
-  # Kibana
+# Logspout - docker log collector
+  #logspout:
+  #  build: ./docker/logspout
+  #  restart: "on-failure:100"
+  #  environment:
+  #    ROUTE_URIS: "logstash+tcp://logstash:5000"
+  #    DEBUG: "true"
+  #  depends_on:
+  #    - logstash
+  #  volumes:
+  #    - /var/run/docker.sock:/var/run/docker.sock
+  #  networks:
+  #    tools:
+  #      ipv4_address: 172.16.237.15
 
-#  elasticsearch:
-#    image: elasticsearch:2.3
-#    environment:
-#      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-#    networks:
-#      tools:
-#        ipv4_address: 172.16.237.20
-
-#  logstash:
-#    image: logstash:2.3
-#    command: -f /opt/logstash/logstash.conf
-#    depends_on:
-#      - elasticsearch
-#    networks:
-#      tools:
-#        ipv4_address: 172.16.237.25
-#    environment:
-#      LOGSPOUT: ignore
-#    volumes:
-#      - ./docker/logstash/logstash.conf:/opt/logstash/logstash.conf:ro
-
-#  logspout:
-#    build: ./docker/logspout
-#    restart: "on-failure:100"
-#    environment:
-#      ROUTE_URIS: "logstash+tcp://logstash:5000"
-#      DEBUG: "true"
-#    depends_on:
-#      - logstash
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock
-#    networks:
-#      tools:
-#        ipv4_address: 172.16.237.15
-
-#  kibana:
-#    image: kibana:4.5
-#    depends_on:
-#      - elasticsearch
-#    environment:
-#      NODE_OPTIONS: "--max-old-space-size=300"
-#    networks:
-#      tools:
-#        ipv4_address: 172.16.237.50
-
+# Kibana - log vizualizer
+  #kibana:
+  #  image: kibana:4.5
+  #  depends_on:
+  #    - elasticsearch
+  #  environment:
+  #    NODE_OPTIONS: "--max-old-space-size=300"
+  #  networks:
+  #    tools:
+  #      ipv4_address: 172.16.237.50
+#---------------------------------------------- Networking
 networks:
   tools:
     driver: bridge
@@ -130,3 +131,4 @@ networks:
       config:
       - subnet: 172.16.238.0/24
         gateway: 172.16.238.1
+  

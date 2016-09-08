@@ -1,4 +1,4 @@
-package cluster
+package cagrr
 
 import (
 	"fmt"
@@ -13,8 +13,9 @@ const (
 )
 
 type int64arr []int64
-func (a int64arr) Len() int { return len(a) }
-func (a int64arr) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+func (a int64arr) Len() int           { return len(a) }
+func (a int64arr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
 
 // Node represents a node in cluster
@@ -43,10 +44,11 @@ type Fragment struct {
 	Finish int64
 }
 
+// RepairResult keeps information about Fragment repair status
 type RepairResult struct {
-	Frag	Fragment
-	Message	string
-	Error	error
+	Frag    *Fragment
+	Message string
+	Error   error
 }
 
 // Tokens initializes array of node tokens
@@ -92,10 +94,10 @@ func (t Token) Fragments(steps int) []Fragment {
 	for i := t.ID; i < t.Next; i += step {
 		var finish int64
 		switch {
-		case i+step>t.Next:
+		case i+step > t.Next:
 			finish = t.Next
 		default:
-			finish = i+step
+			finish = i + step
 		}
 		frag := Fragment{Token: &t, Start: i, Finish: finish}
 		result = append(result, frag)
@@ -116,9 +118,9 @@ func (f Fragment) Repair(keyspace string) (RepairResult, error) {
 	str, err := nodetool(args)
 
 	result := RepairResult{
-		Frag: f,
+		Frag:    &f,
 		Message: str,
-		Error: err,
+		Error:   err,
 	}
 	return result, err
 }

@@ -12,7 +12,7 @@ setup: init
 
 
 holes: init
-	@./tests/stub.py make
+	@go test -v
 
 test: holes
 

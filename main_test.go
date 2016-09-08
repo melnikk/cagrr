@@ -1,14 +1,15 @@
-package main
+package cagrr
 
 import (
 	"fmt"
+	"math/rand"
+	"testing"
+	"time"
+
 	"github.com/docker/engine-api/client"
 	"github.com/docker/engine-api/types"
 	"github.com/gocql/gocql"
 	"golang.org/x/net/context"
-	"math/rand"
-	"testing"
-	"time"
 )
 
 const (
