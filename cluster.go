@@ -53,6 +53,9 @@ type RepairResult struct {
 
 // Tokens initializes array of node tokens
 func (n Node) Tokens() (map[int64]Token, []int64) {
+	//url := fmt.Sprintf("http://%s:%d", n.Host, n.Port)
+	//runner := NewRunner(url)
+	//return runner.Ring()
 	result := make(map[int64]Token)
 	args := []string{
 		"-h", n.Host,
@@ -85,6 +88,7 @@ func (n Node) Tokens() (map[int64]Token, []int64) {
 		}
 	}
 	return result, keys
+
 }
 
 // Fragments is a set of ranges in Token
@@ -107,6 +111,8 @@ func (t Token) Fragments(steps int) []Fragment {
 
 // Repair fragment of node range
 func (f Fragment) Repair(keyspace string) (RepairResult, error) {
+	//runner := NewRunner(jolokiaURL, domainName)
+
 	node := f.Token.Node
 	args := []string{
 		"-h", node.Host,
