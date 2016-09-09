@@ -29,6 +29,7 @@ var (
 )
 
 func operateContainer(t *testing.T, containerName string, operation string) {
+
 	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
 	cli, err := client.NewClient("unix:///var/run/docker.sock", "v1.24", nil, defaultHeaders)
 	if err != nil {
@@ -72,13 +73,13 @@ func makeHoles(t *testing.T) gocql.UUID {
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s.%s (id UUID, userid text, firstname text, PRIMARY KEY(id)) WITH read_repair_chance = 0 AND dclocal_read_repair_chance = 0`, testKeyspace, table)).Exec(); err != nil {
 		t.Fatal(err)
 	}
+
 	if err := session.Query(
 		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS ON %s.%s (firstname)`, testKeyspace, table)).Exec(); err != nil {
 		t.Fatal(err)
 	}
 
 	// Write to cluster originalValue
-
 	uuid := gocql.TimeUUID()
 	if err := session.Query(
 		fmt.Sprintf(`INSERT INTO %s.%s (id, userid, firstname) VALUES (?, ?, ?)`, testKeyspace, table),
@@ -113,18 +114,17 @@ func makeHoles(t *testing.T) gocql.UUID {
 	return uuid
 }
 
-func readResult(session *gocql.Session, uuid gocql.UUID, i int, results chan<- bool) {
+// Test holes and makers
+func TestHoles(t *testing.T) {
 
-	q := fmt.Sprintf("select id, userid, firstname from %s.%s where firstname=? and id=?", testKeyspace, table)
-	var id gocql.UUID
-	var userid string
-	var value string
-	if err := session.Query(q, originalValue, uuid).Consistency(gocql.One).Scan(&id, &userid, &value); err != nil {
-		results <- false
+	uuid := makeHoles(t)
+
+	prob := searchHole(t, uuid)
+	if prob > 0 {
+		t.Logf("Hole found! Probability: %.2f", prob)
 	} else {
-		results <- true
+		t.Error("There is no holes")
 	}
-
 }
 
 func searchHole(t *testing.T, uuid gocql.UUID) float32 {
@@ -155,15 +155,15 @@ func searchHole(t *testing.T, uuid gocql.UUID) float32 {
 	return float32(count) / float32(tries)
 }
 
-// Test holes and makers
-func TestHoles(t *testing.T) {
+func readResult(session *gocql.Session, uuid gocql.UUID, i int, results chan<- bool) {
 
-	uuid := makeHoles(t)
-
-	prob := searchHole(t, uuid)
-	if prob > 0 {
-		t.Logf("Hole found! Probability: %.2f", prob)
+	q := fmt.Sprintf("select id, userid, firstname from %s.%s where firstname=? and id=?", testKeyspace, table)
+	var id gocql.UUID
+	var userid string
+	var value string
+	if err := session.Query(q, originalValue, uuid).Consistency(gocql.One).Scan(&id, &userid, &value); err != nil {
+		results <- false
 	} else {
-		t.Error("There is no holes")
+		results <- true
 	}
 }

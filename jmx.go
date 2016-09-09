@@ -2,14 +2,31 @@ package cagrr
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
 
 	golokia "github.com/s8sg/go_jolokia"
 )
 
+// BigInts are int64 array
+type BigInts []int64
+
+func (s BigInts) Len() int {
+	return len(s)
+}
+func (s BigInts) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s BigInts) Less(i, j int) bool {
+	return s[i] < s[j]
+}
+
 // Runner starts JMX communication
 type Runner struct {
+	sort.Interface
 	url    string
 	domain string
+	tokens []int64
 	client *golokia.JolokiaClient
 }
 
@@ -19,7 +36,7 @@ const (
 
 // NewRunner returns new Runner
 func NewRunner(host string, port string) Runner {
-	jolokia := "cassandra.jmx"
+	jolokia := "jolokia/read"
 	client := golokia.NewJolokiaClient("http://" + host + ":" + port + "/" + jolokia)
 	client.SetTarget(host + ":" + port)
 	result := Runner{domain: domainName, client: client}
@@ -27,11 +44,20 @@ func NewRunner(host string, port string) Runner {
 }
 
 // Ring returns directed list of Token
-func (r Runner) Ring() {
+func (r Runner) Ring() []int64 {
 	properties := []string{"type=StorageService"}
-	props, err := r.client.ListProperties(r.domain, properties)
+	attribute := "TokenToEndpointMap"
+	props, err := r.client.GetAttr(r.domain, properties, attribute)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(props)
+	var tokens []int64
+	for token, host := range props.(map[string]interface{}) {
+		fmt.Println(fmt.Sprintf("%s -> %s", token, host))
+		value, _ := strconv.ParseInt(token, 10, 64)
+		tokens = append(tokens, value)
+	}
+	sort.Sort(BigInts(tokens))
+	r.tokens = tokens
+	return r.tokens
 }

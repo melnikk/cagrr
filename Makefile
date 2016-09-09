@@ -10,14 +10,11 @@ setup: init
 	@ansible-playbook -i inventory provision.yml && \
 	docker-compose restart cassandra1 cassandra2 cassandra3
 
-
-holes: init
-	@go test -v
-
-test: holes
+test: init
+	@go test -v -cover
 
 check: init
-	@./tests/stub.py
+	@go test -v -args -check
 
 build:
 	@go build -a

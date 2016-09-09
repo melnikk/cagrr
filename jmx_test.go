@@ -3,6 +3,6 @@ package cagrr
 import "testing"
 
 func TestRing(t *testing.T) {
-	runner := NewRunner("127.0.0.1", "7199")
+	runner := NewRunner("172.16.238.10", "8080")
 	runner.Ring()
 }
