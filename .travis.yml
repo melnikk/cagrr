@@ -48,5 +48,7 @@ deploy:
     - "${RELEASE_PKG_TAR}"
     - "${RELEASE_PKG_DEB}"
     - "${RELEASE_PKG_RPM}"
+  skip_cleanup: true
   on:
+    tags: true
     repo: melnikk/cagrr
