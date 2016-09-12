@@ -1,4 +1,4 @@
-default: run
+default: test
 
 clean:
 	@docker-compose down -v --remove-orphans
