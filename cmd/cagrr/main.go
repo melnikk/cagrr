@@ -1,23 +1,27 @@
-package cagrr
+package main
 
 import (
-	"flag"
 	"net"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
+	flags "github.com/jessevdk/go-flags"
+	"github.com/melnikk/cagrr"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/sohlich/elogrus"
 	"gopkg.in/olivere/elastic.v3"
 )
 
-var host = flag.String("h", "localhost", "Address of a node in cluster")
-var port = flag.Int("p", 7199, "JMX port on a node")
-var keyspace = flag.String("k", "all", "Keyspace to repair")
-var steps = flag.Int("s", 100, "Steps to split token ranges to")
-var workers = flag.Int("w", 1, "Number of concurrent workers")
-var verbosity = flag.String("v", "debug", "Verbosity of tool, possible values are: panic, fatal, error, waring, debug")
+var opts struct {
+	Host      string `short:"h" long:"host" default:"localhost" description:"Address of a node in cluster" env:"CASSANDRA_HOST"`
+	Port      int    `short:"p" long:"port" default:"7199" description:"Connector port on a node" env:"CASSANDRA_PORT"`
+	Connector string `short:"c" long:"conn" default:"mx4j" description:"Connection type, possible values: mx4j (default), jolokia, nodetool" env:"CASSANDRA_CONNECTOR"`
+	Keyspace  string `short:"k" long:"keyspace" default:"*" description:"Keyspace to repair" env:"REPAIR_KEYSPACE"`
+	Steps     int    `short:"s" long:"steps" default:"1" description:"Steps to split token ranges to" env:"REPAIR_STEPS"`
+	Workers   int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
+	Verbosity string `short:"v" long:"verbosity" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
+}
 
 // Metrics of repair process
 type Metrics struct {
@@ -28,17 +32,17 @@ type Metrics struct {
 
 var instr Metrics
 
-func fragmentGenerator(node Node, jobs chan<- Fragment) int {
+func fragmentGenerator(node cagrr.Node, jobs chan<- cagrr.Fragment) int {
 
 	log.WithFields(log.Fields{
-		"keyspace": *keyspace,
+		"keyspace": opts.Keyspace,
 	}).Info("Fragment generator started")
 
 	tokens, keys := node.Tokens()
 
 	if len(keys) == 0 {
 		log.WithFields(log.Fields{
-			"keyspace": *keyspace,
+			"keyspace": opts.Keyspace,
 		}).Error("Empty token ring")
 	}
 
@@ -50,7 +54,7 @@ func fragmentGenerator(node Node, jobs chan<- Fragment) int {
 			"next":  t.Next,
 		}).Info("Generating fragments from token")
 
-		frags := t.Fragments(*steps)
+		frags := t.Fragments(opts.Steps)
 		for _, f := range frags {
 			counter++
 			f.ID = counter
@@ -59,7 +63,7 @@ func fragmentGenerator(node Node, jobs chan<- Fragment) int {
 				"start":    f.Start,
 				"finish":   f.Finish,
 				"token":    t.ID,
-				"keyspace": *keyspace,
+				"keyspace": opts.Keyspace,
 			}).Info("Fragment generated")
 
 			jobs <- f
@@ -70,7 +74,7 @@ func fragmentGenerator(node Node, jobs chan<- Fragment) int {
 	return counter
 }
 
-func repairFragment(wid int, fragments <-chan Fragment, results chan<- RepairResult) {
+func repairFragment(wid int, fragments <-chan cagrr.Fragment, results chan<- cagrr.RepairResult) {
 
 	log.WithFields(log.Fields{
 		"worker": wid,
@@ -82,11 +86,11 @@ func repairFragment(wid int, fragments <-chan Fragment, results chan<- RepairRes
 			"worker":   wid,
 			"start":    f.Start,
 			"finish":   f.Finish,
-			"keyspace": *keyspace,
+			"keyspace": opts.Keyspace,
 		}
 		log.WithFields(logFields).Info("Processing fragment")
 
-		res, err := f.Repair(*keyspace)
+		res, err := f.Repair(opts.Keyspace)
 		if err != nil {
 			log.WithFields(logFields).Error(err)
 			instr.errorCount.Inc(1)
@@ -98,7 +102,7 @@ func repairFragment(wid int, fragments <-chan Fragment, results chan<- RepairRes
 	}
 }
 
-func processResult(result RepairResult) {
+func processResult(result cagrr.RepairResult) {
 
 	log.WithFields(log.Fields{
 		"fid":     result.Frag.ID,
@@ -106,17 +110,17 @@ func processResult(result RepairResult) {
 	}).Info("Processing result")
 }
 
-func repair(node Node) {
+func repair(node cagrr.Node) {
 
 	log.Info("Repairing node")
 
-	w := *workers
-	jobs := make(chan Fragment, w)
-	results := make(chan RepairResult, w)
+	w := opts.Workers
+	jobs := make(chan cagrr.Fragment, w)
+	results := make(chan cagrr.RepairResult, w)
 
 	go fragmentGenerator(node, jobs)
 
-	for w := 1; w <= *workers; w++ {
+	for w := 1; w <= opts.Workers; w++ {
 
 		log.WithFields(log.Fields{
 			"worker": w,
@@ -131,10 +135,9 @@ func repair(node Node) {
 }
 
 func main() {
+	flags.Parse(&opts)
 
-	flag.Parse()
-
-	node := Node{Host: *host, Port: *port}
+	node := cagrr.Node{Host: opts.Host, Port: opts.Port}
 
 	initLog(node)
 	initMetrics()
@@ -152,7 +155,7 @@ func initMetrics() {
 	}
 }
 
-func initLog(node Node) {
+func initLog(node cagrr.Node) {
 	url := os.Getenv("ELASTICSEARCH_URL")
 	index := "cagrr"
 
@@ -162,7 +165,7 @@ func initLog(node Node) {
 			"url": url,
 		}).Panic(err)
 	}
-	level, _ := log.ParseLevel(*verbosity)
+	level, _ := log.ParseLevel(opts.Verbosity)
 	hook, err := elogrus.NewElasticHook(client, node.Host, level, index)
 	if err != nil {
 		log.WithFields(log.Fields{

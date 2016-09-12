@@ -1,4 +1,6 @@
-package cagrr
+// +build integration
+
+package main
 
 import (
 	"fmt"

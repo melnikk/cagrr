@@ -1,7 +1,6 @@
-package cagrr
+package conn
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 
@@ -28,8 +27,7 @@ func mx4jTokens(host string, port string) []int64 {
 
 	var tokens []int64
 	props := metricMap["TokenToEndpointMap"]
-	for token, host := range props.(map[string]interface{}) {
-		fmt.Println(fmt.Sprintf("%s -> %s", token, host))
+	for token := range props.(map[string]interface{}) {
 		value, _ := strconv.ParseInt(token, 10, 64)
 		tokens = append(tokens, value)
 	}

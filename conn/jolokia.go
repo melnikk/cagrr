@@ -1,4 +1,4 @@
-package cagrr
+package conn
 
 import (
 	"fmt"
@@ -52,8 +52,7 @@ func (r Runner) Ring() []int64 {
 		fmt.Println(err)
 	}
 	var tokens []int64
-	for token, host := range props.(map[string]interface{}) {
-		fmt.Println(fmt.Sprintf("%s -> %s", token, host))
+	for token := range props.(map[string]interface{}) {
 		value, _ := strconv.ParseInt(token, 10, 64)
 		tokens = append(tokens, value)
 	}

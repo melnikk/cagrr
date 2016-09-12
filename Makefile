@@ -11,10 +11,10 @@ setup: init
 	docker-compose restart cassandra1 cassandra2 cassandra3
 
 test: init
-	@go test -v -cover
+	@go test -cover -tags cagrr -v ./...
 
 check: init
-	@go test -v -args -check
+	@go test -v ./... -args -check
 
 build:
 	@go build -a

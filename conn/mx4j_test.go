@@ -1,4 +1,4 @@
-package cagrr
+package conn
 
 import (
 	"testing"
