@@ -31,8 +31,6 @@ before_install:
   - go get github.com/melnikk/go_jolokia
   - go get github.com/lytics/gowrapmx4j
   - go get github.com/gocql/gocql
-  - go get github.com/docker/engine-api/client
-  - go get github.com/docker/engine-api/types
   - go get golang.org/x/net/context
   - go get github.com/jessevdk/go-flags
   - go get github.com/gliderlabs/logspout
