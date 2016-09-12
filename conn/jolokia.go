@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 
-	golokia "github.com/s8sg/go_jolokia"
+	golokia "github.com/melnikk/go_jolokia"
 )
 
 // BigInts are int64 array
