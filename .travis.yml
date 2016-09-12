@@ -1,59 +1,52 @@
 language: go
-
 go:
-    - 1.6
-    - tip
-
+- 1.6
+- tip
 notifications:
   webhooks:
     urls:
-      - https://webhooks.gitter.im/e/a85da9d6e9900584075a
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: never     # options: [always|never|change] default: always
-
+    - https://webhooks.gitter.im/e/a85da9d6e9900584075a
+    on_success: change
+    on_failure: always
+    on_start: never
 before_install:
-  - sudo apt-get install -y rpm
-  - sudo apt-get install ruby-dev gcc make
-  - gem install fpm
-  - go get github.com/axw/gocov/gocov
-  - go get github.com/mattn/goveralls
-  - go get golang.org/x/tools/cmd/cover
-  - go get github.com/modocache/gover
-  - go get github.com/golang/lint/golint
-  - go get github.com/onsi/ginkgo/ginkgo
-  - go get github.com/onsi/gomega
-  - go get github.com/sohlich/elogrus
-  - go get github.com/Sirupsen/logrus
-  - go get gopkg.in/olivere/elastic.v3
-  - go get github.com/cyberdelia/go-metrics-graphite
-  - go get github.com/rcrowley/go-metrics
-  - go get github.com/melnikk/go_jolokia
-  - go get github.com/lytics/gowrapmx4j
-  - go get github.com/gocql/gocql
-  - go get golang.org/x/net/context
-  - go get github.com/jessevdk/go-flags
-  - go get github.com/gliderlabs/logspout
-  - go get github.com/looplab/logspout-logstash
+- sudo apt-get install -y rpm
+- sudo apt-get install ruby-dev gcc make
+- gem install fpm
+- go get github.com/axw/gocov/gocov
+- go get github.com/mattn/goveralls
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/modocache/gover
+- go get github.com/golang/lint/golint
+- go get github.com/onsi/ginkgo/ginkgo
+- go get github.com/onsi/gomega
+- go get github.com/sohlich/elogrus
+- go get github.com/Sirupsen/logrus
+- go get gopkg.in/olivere/elastic.v3
+- go get github.com/cyberdelia/go-metrics-graphite
+- go get github.com/rcrowley/go-metrics
+- go get github.com/melnikk/go_jolokia
+- go get github.com/lytics/gowrapmx4j
+- go get github.com/gocql/gocql
+- go get golang.org/x/net/context
+- go get github.com/jessevdk/go-flags
+- go get github.com/gliderlabs/logspout
+- go get github.com/looplab/logspout-logstash
 install:
-  - make test
+- make test
 script:
-  - make packages
-
+- make packages
 before_deploy:
-  - export RELEASE_PKG_TAR=$(ls build/cagrr*.tar.gz)
-  - export RELEASE_PKG_RPM=$(ls build/cagrr*.rpm)
-  - export RELEASE_PKG_DEB=$(ls build/cagrr*.deb)
-
+- export RELEASE_PKG_TAR=$(ls build/cagrr*.tar.gz)
+- export RELEASE_PKG_RPM=$(ls build/cagrr*.rpm)
+- export RELEASE_PKG_DEB=$(ls build/cagrr*.deb)
 deploy:
   provider: releases
   api_key:
-    secure: brKcXZWaP5Gbl44RbvlD4kCGgpbqHUdavZ1h4NZF2mJwehh1TrHniHHtiM5DOpdS6Aa6v9YWvGaySIKqfi+U9icgbEDDf5FTlCDp5OhHCZh5xAGFCrHnoxq+j/ARBvd1412kvKQQZY/N7eFTUbC6TtxmO7DEqD5Zek/QhfgocXdO6nowkmMzPANwuxni3iV/zfDHZT2Buw217+NX/0KlKO0XPJRpAs6ebcAnsFnSaino7bje/n/2LyODk35gXXRM4vDGeZG2E1cwYh4dV8OaDdr9e75E2wqjDWFvTq1tj9hYAqCD3mI77LVwS8QqG2taTUP3Ez92ovS1oBu7khLbuzIXzvVs2D62xUsnvGFV+NtI8xoo/MQSl0Q/OUPkSlTzrw5XwVyzRttSsujqFsX6freqVLgODbjkIo9dFGCzLUOfAGeGFohtgSgaTxzY60sXhbAekCqSDZhpgOGmYaWDrQUlXbNdo3kuvw6X2LfRoA6FW2DaTu8XkiWinvUDeGWojaMz/zrHe+VYq1aI26bUR07t3emU75f0EZSZxyOkJQ3rGPdPdKsa1ndlYfR+odpS7M3T4Kam+p9Uo03mgwrhFkGI25PBpzFE2BGkBZG4ZQ2EzMq8DfsEvA45J/pmFuX1Lra87Znwn3+lPJo860JKJXvIyjJj1fxSsz1DnwbhNDQ=
+    secure: IjaK7AABiiOt2PehU66dROBpyNUWrYQAXnxe0houOa8nuesbX41SAZl1xHpjeHQDzg4/26S8A+Dmiwy0L+ExBoIkRbEOR3ZoZYgzpEKDlGstGCc+yp6bgXXKEWcVofaB5fcTFim9N/G/mWqNvEezWayLnTVkzgDObNBY1XCSooEBfZqTD1FKWUZVstI30HdvGFBpcp+rUqbhtQnEnHO4CSYtXszTBM1yN7M7CoptckTNFei79t+B3Wf0vEjEAcysX7OXsWykGmj8sBT3Jz3ocMLeGfzrP+IGaImUuQgaixgZJiBpzLtQaVCyAm/hbRxu+hx2Y3RjC+vo5Gd86pwu9ddS5XhOsdWH7Hz34ljEZQiHg2JgB4sbuNWXWM/Ryce6BRcM4SjN6gEMwKP3iUlaclSlXyJNGEgbrRgwNSeZKjDqVuOFEQIB4H98+66nLMMyv7IwA97SRs8QRrCPyIoqrBZfENQnGYxhLRvf+t1XQjgjYmvrGEXEiSKlkFvNGd7Hb1F34lamoi534nN0OBpQl0qZ3koTtnWBnHumpa5bM0R/oq4qAQ8ysqYJ7d/9WdWZpLJOiEjqmCJTYyTCG8f9Sz8XuqEv3wiBO11fXlB0OD5R9sevTs6o2QfSSib8QV37WG8ntvEE7e7b8NVTOdo67IXMTaOPvRkmCXp+HsDxRjY=
   file:
     - "${RELEASE_PKG_TAR}"
-    - "${RELEASE_PKG_RPM}"
     - "${RELEASE_PKG_DEB}"
-  skip_cleanup: true
+    - "${RELEASE_PKG_RPM}"
   on:
-    tags: true
-    condition: $TRAVIS_GO_VERSION = 1.6
+    repo: melnikk/cagrr
