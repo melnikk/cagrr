@@ -1,0 +1,18 @@
+language: go
+
+go:
+    - tip
+install:
+    - make
+    - get-deps
+    - go get github.com/sohlich/elogrus
+    - go get github.com/Sirupsen/logrus
+    - gopkg.in/olivere/elastic.v3
+    - go get github.com/cyberdelia/go-metrics-graphite
+    - go get github.com/rcrowley/go-metrics
+    - go get github.com/s8sg/go_jolokia
+    - go get github.com/lytics/gowrapmx4j
+    - go get github.com/gocql/gocql
+    - go get github.com/docker/engine-api/client
+    - go get github.com/docker/engine-api/types
+    - go get golang.org/x/net/context
