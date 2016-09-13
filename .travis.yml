@@ -25,7 +25,7 @@ before_install:
 - go get gopkg.in/olivere/elastic.v3
 - go get github.com/cyberdelia/go-metrics-graphite
 - go get github.com/rcrowley/go-metrics
-- go get github.com/melnikk/go_jolokia
+- go get github.com/cmceniry/golokia
 - go get github.com/lytics/gowrapmx4j
 - go get github.com/gocql/gocql
 - go get golang.org/x/net/context

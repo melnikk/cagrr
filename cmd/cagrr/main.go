@@ -15,7 +15,7 @@ import (
 
 var opts struct {
 	Host      string `short:"h" long:"host" default:"localhost" description:"Address of a node in cluster" env:"CASSANDRA_HOST"`
-	Port      int    `short:"p" long:"port" default:"7199" description:"Connector port on a node" env:"CASSANDRA_PORT"`
+	Port      int    `short:"p" long:"port" default:"8081" description:"Connector port on a node" env:"CASSANDRA_PORT"`
 	Connector string `short:"c" long:"conn" default:"mx4j" description:"Connection type, possible values: mx4j (default), jolokia, nodetool" env:"CASSANDRA_CONNECTOR"`
 	Keyspace  string `short:"k" long:"keyspace" default:"*" description:"Keyspace to repair" env:"REPAIR_KEYSPACE"`
 	Steps     int    `short:"s" long:"steps" default:"1" description:"Steps to split token ranges to" env:"REPAIR_STEPS"`

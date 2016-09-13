@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strconv"
 
-	golokia "github.com/melnikk/go_jolokia"
+	"github.com/cmceniry/golokia"
 )
 
 // BigInts are int64 array
@@ -27,7 +27,7 @@ type Runner struct {
 	url    string
 	domain string
 	tokens []int64
-	client *golokia.JolokiaClient
+	client *golokia.Client
 }
 
 const (
@@ -36,18 +36,16 @@ const (
 
 // NewRunner returns new Runner
 func NewRunner(host string, port string) Runner {
-	jolokia := "jolokia/read"
-	client := golokia.NewJolokiaClient("http://" + host + ":" + port + "/" + jolokia)
-	client.SetTarget(host + ":" + port)
+	client := golokia.NewClient(host, port)
 	result := Runner{domain: domainName, client: client}
 	return result
 }
 
 // Ring returns directed list of Token
 func (r Runner) Ring() []int64 {
-	properties := []string{"type=StorageService"}
+	bean := "type=StorageService"
 	attribute := "TokenToEndpointMap"
-	props, err := r.client.GetAttr(r.domain, properties, attribute)
+	props, err := r.client.GetAttr(r.domain, bean, attribute)
 	if err != nil {
 		fmt.Println(err)
 	}
