@@ -8,7 +8,7 @@ default: test
 .PHONY: test build
 
 clean:
-	rm -rf build
+	@docker-compose down && rm -rf build
 
 init:
 	@docker-compose up -d

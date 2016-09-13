@@ -4,10 +4,13 @@ services:
   cassandra1:
     build: ./docker/cassandra
     restart: "on-failure:100"
+    ports:
+        - 7199:7199
     networks:
       app:
         ipv4_address: 172.16.238.10
     environment:
+      CASSANDRA_BROADCAST_ADDRESS: 172.16.238.10
       JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.10"
       LOCAL_JMX: "no"
 
@@ -18,6 +21,7 @@ services:
       app:
         ipv4_address: 172.16.238.11
     environment:
+      CASSANDRA_BROADCAST_ADDRESS: 172.16.238.11
       CASSANDRA_SEEDS: "172.16.238.10"
       JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.11"
       LOCAL_JMX: "no"
@@ -29,7 +33,8 @@ services:
       app:
         ipv4_address: 172.16.238.12
     environment:
-      CASSANDRA_SEEDS: "172.16.238.10"
+      CASSANDRA_BROADCAST_ADDRESS: 172.16.238.12
+      CASSANDRA_SEEDS: 172.16.238.10
       JVM_OPTS: "-Djava.rmi.server.hostname=172.16.238.12"
       LOCAL_JMX: "no"
 
