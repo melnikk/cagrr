@@ -1,0 +1,3 @@
+[submodule "cajrr"]
+	path = cajrr
+	url = https://github.com/melnikk/cajrr.git

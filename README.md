@@ -1,11 +1,9 @@
-cassandra-go-range-repair
-=========================
+Cassandra Go Range Repair tool
+==============================
 [![Build Status](https://travis-ci.org/melnikk/cagrr.svg?branch=master)](https://travis-ci.org/melnikk/cagrr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/melnikk/cagrr)](https://goreportcard.com/report/github.com/melnikk/cagrr)
 
-Cassandra partial range repair in Go
-
-Anti-entropy Cassandra cluster tool
+Anti-entropy Cassandra cluster tool. It uses [repair service](https://github.com/melnikk/cajrr) written in Java.
 
 Prerequisites
 -------------
