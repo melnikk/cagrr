@@ -1,9 +1,9 @@
 Cassandra Go Range Repair tool
 ==============================
-[![Build Status](https://travis-ci.org/melnikk/cagrr.svg?branch=master)](https://travis-ci.org/melnikk/cagrr)
-[![Go Report Card](https://goreportcard.com/badge/github.com/melnikk/cagrr)](https://goreportcard.com/report/github.com/melnikk/cagrr)
+[![Build Status](https://travis-ci.org/skbkontur/cagrr.svg?branch=master)](https://travis-ci.org/skbkontur/cagrr)
+[![Go Report Card](https://goreportcard.com/badge/github.com/skbkontur/cagrr)](https://goreportcard.com/report/github.com/skbkontur/cagrr)
 
-Anti-entropy Cassandra cluster tool. It uses [repair service](https://github.com/melnikk/cajrr) written in Java.
+Anti-entropy Cassandra cluster tool. It uses [repair service](https://github.com/skbkontur/cajrr) written in Java.
 
 Prerequisites
 -------------

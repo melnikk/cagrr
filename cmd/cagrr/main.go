@@ -7,8 +7,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/cyberdelia/go-metrics-graphite"
 	flags "github.com/jessevdk/go-flags"
-	"github.com/melnikk/cagrr"
 	metrics "github.com/rcrowley/go-metrics"
+	"github.com/skbkontur/cagrr"
 	"github.com/sohlich/elogrus"
 	"gopkg.in/olivere/elastic.v3"
 )
