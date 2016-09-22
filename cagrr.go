@@ -5,11 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net/http"
-	"os/exec"
-
-	s "strings"
 )
 
 const (
@@ -22,31 +18,24 @@ func (a int64arr) Len() int           { return len(a) }
 func (a int64arr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
 
-// Node represents a node in cluster
-type Node struct {
-	Host string
-	Port int
-}
-
 // Ring represents several node combined in ring
 type Ring struct {
-	Nodes []Node
+	Host   string
+	Port   int
+	Tokens []Token `json:"tokens"`
 }
 
 // Token represents primary key range
 type Token struct {
-	Node *Node
-	ID   int64
-	Next int64
-	Host string
+	ID     string     `json:"key"`
+	Ranges []Fragment `json:"ranges"`
 }
 
 // Fragment of Token range for repair
 type Fragment struct {
-	ID     int
-	Token  *Token
-	Start  int64
-	Finish int64
+	ID    int
+	Start string `json:"start"`
+	End   string `json:"end"`
 }
 
 // Repair is a Unit of repair work
@@ -70,84 +59,45 @@ type RepairStatus struct {
 	Total   int    `json:"total"`
 }
 
-func (n Node) Ranges(slices int) ([]string, error) {
-	url := fmt.Sprintf("http://%s:%d/ring/%d", n.Host, n.Port, slices)
-	r, _ := http.Get(url)
-	response, _ := ioutil.ReadAll(r.Body)
-	var ranges []string
-
-	err := json.Unmarshal(response, &ranges)
-	return ranges, err
+// Get the Ring
+func (r Ring) Get(slices int) (Ring, error) {
+	url := fmt.Sprintf("http://%s:%d/ring/%d", r.Host, r.Port, slices)
+	res, _ := http.Get(url)
+	response, _ := ioutil.ReadAll(res.Body)
+	err := json.Unmarshal(response, &r)
+	return r, err
 }
 
-// Tokens initializes array of node tokens
-func (n Node) Tokens() (map[int64]Token, []int64) {
-	url := fmt.Sprintf("http://%s:%d/ring", n.Host, n.Port)
-	r, _ := http.Get(url)
-	response, _ := ioutil.ReadAll(r.Body)
-	var ring map[int64]string
-	var result = make(map[int64]Token)
-
-	err := json.Unmarshal(response, &ring)
-	var prev int64
-	var keys []int64
-	if err != nil {
-		for i, host := range ring {
-			keys = append(keys, i)
-			next := i
-			if prev == 0 {
-				prev = i
-				continue
+// Repair ring
+func (r Ring) Repair(keyspace string, from int, cause string, owner string, callback string) ([]Repair, []error) {
+	count := r.Count()
+	repairs := make([]Repair, count)
+	errors := make([]error, count)
+	for _, token := range r.Tokens {
+		for _, frag := range token.Ranges {
+			if frag.ID > from {
+				repair, err := frag.Repair(r, keyspace, cause, owner, callback)
+				repairs = append(repairs, repair)
+				errors = append(errors, err)
 			}
-			token := Token{Node: &n, ID: prev, Next: next, Host: host}
-
-			result[prev] = token
-			prev = next
 		}
 	}
-	return result, keys
+	return repairs, errors
 }
 
-// Fragments is a set of ranges in Token
-func (t Token) Fragments(steps int) []Fragment {
-	var min *big.Int
-	var max *big.Int
-	var size *big.Int
-	one := big.NewInt(1)
-	two := big.NewInt(2)
-	power := big.NewInt(63)
-
-	min = min.Exp(two, power, nil)
-	min = min.Neg(min)
-
-	max = max.Exp(two, power, nil)
-	max = max.Sub(max, one)
-
-	size = size.Sub(max, min)
-	size = size.Add(size, one)
-	//BigInteger RANGE_MIN = new BigInteger("2").pow(63).negate();
-	//RANGE_MAX = new BigInteger("2").pow(63).subtract(BigInteger.ONE);
-	//RANGE_SIZE = RANGE_MAX.subtract(RANGE_MIN).add(BigInteger.ONE);
-
-	var result []Fragment
-	step := (t.Next - t.ID) / int64(steps)
-	for i := t.ID; i < t.Next; i += step {
-		var finish int64
-		switch {
-		case i+step > t.Next:
-			finish = t.Next
-		default:
-			finish = i + step
+// Count fragments of ring
+func (r Ring) Count() int {
+	count := 0
+	for _, token := range r.Tokens {
+		for range token.Ranges {
+			count++
 		}
-		frag := Fragment{Token: &t, Start: i, Finish: finish - 1}
-		result = append(result, frag)
 	}
-	return result
+	return count
 }
 
-// Repair fragment of node range
-func (f Fragment) Repair(keyspace string, cause string, owner string, callback string) (Repair, error) {
-
+// Repair fragment
+func (f Fragment) Repair(ring Ring, keyspace string, cause string, owner string, callback string) (Repair, error) {
 	options := &Repair{
 		Keyspace: keyspace,
 		Cause:    cause,
@@ -155,11 +105,11 @@ func (f Fragment) Repair(keyspace string, cause string, owner string, callback s
 		Callback: callback,
 		Options: map[string]string{
 			"parallelism": "parallel",
-			"ranges":      fmt.Sprintf("%d:%d", f.Start, f.Finish-1),
+			"ranges":      fmt.Sprintf("%s:%s", f.Start, f.End),
 		},
 	}
 
-	url := fmt.Sprintf("http://%s:%d/repair", f.Token.Node.Host, f.Token.Node.Port)
+	url := fmt.Sprintf("http://%s:%d/repair", ring.Host, ring.Port)
 
 	buf, _ := json.Marshal(options)
 	body := bytes.NewBuffer(buf)
@@ -171,9 +121,4 @@ func (f Fragment) Repair(keyspace string, cause string, owner string, callback s
 	}
 
 	return repair, err
-}
-
-func nodetool(args []string) (string, error) {
-	out, err := exec.Command("nodetool", s.Join(args, " ")).Output()
-	return string(out), err
 }
