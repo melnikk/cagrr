@@ -122,15 +122,15 @@ services:
   #      ipv4_address: 172.16.237.50
 #---------------------------------------------- Networking
 networks:
-  tools:
-    driver: bridge
-    driver_opts:
-      com.docker.network.enable_ipv6: "false"
-    ipam:
-      driver: default
-      config:
-      - subnet: 172.16.237.0/24
-        gateway: 172.16.237.1
+#  tools:
+#    driver: bridge
+#    driver_opts:
+#      com.docker.network.enable_ipv6: "false"
+#    ipam:
+#      driver: default
+#      config:
+#      - subnet: 172.16.237.0/24
+#        gateway: 172.16.237.1
   app:
     driver: bridge
     driver_opts:
