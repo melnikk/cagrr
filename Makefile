@@ -27,7 +27,7 @@ build:
 	@cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
 
 run:
-	ELASTICSEARCH_URL=http://172.16.237.20:9200 GRAPHITE_URL=172.16.237.4:2003 go run main.go -h 172.16.238.10 -k fedikeyspace -w 4 -s 2
+	ELASTICSEARCH_URL=http://localhost:9200 go run cmd/cagrr/main.go -v debug -k testspace -w 4 -s 2
 
 integration: init
 	@go test -cover -tags="cagrr integration" -v ./...

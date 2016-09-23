@@ -96,7 +96,7 @@ func repairStatus(w http.ResponseWriter, req *http.Request) {
 
 func initLog() {
 	url := os.Getenv("ELASTICSEARCH_URL")
-	index := opts.App
+	index := fmt.Sprintf("devops-%s", opts.App)
 
 	client, err := elastic.NewClient(elastic.SetURL(url))
 	if err != nil {
