@@ -13,12 +13,6 @@
       lineinfile: "dest=/etc/cassandra/cassandra.yaml state=present regexp='^max_hints_delivery_threads: 2' line='max_hints_delivery_threads: 1'"
     - name: Disable JMX authentication in Cassandra
       lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='jmxremote.authenticate=true' line='  JVM_OPTS=\"$JVM_OPTS -Dcom.sun.management.jmxremote.authenticate=false\"'"
-    - name: Enable MX4J interface
-      lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present regexp='^#MX4J_ADDRESS' line='MX4J_ADDRESS=\"-Dmx4jaddress=0.0.0.0\"'"
-    - name: Enable Jolokia interface
-      lineinfile: "dest=/etc/cassandra/cassandra-env.sh state=present line='JVM_OPTS=\"$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/jolokia.jar=port=8080,host=0.0.0.0\"'"
-#MX4J_ADDRESS="-Dmx4jaddress=127.0.0.1"
-#MX4J_PORT="-Dmx4jport=8081"
 
 - hosts: grafana
   connection: local

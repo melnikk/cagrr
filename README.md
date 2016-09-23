@@ -7,11 +7,7 @@ Anti-entropy Cassandra cluster tool. It uses [repair service](https://github.com
 
 Prerequisites
 -------------
-1. `nodetool` installed (on your host)
-2. *OR* `mx4j` interface activated (on cassandra node)
-3. *OR* `jolokia` agent installed (on cassandra node)
-
-You may control connection type via `-c` flag, default connector is `mx4j`.
+You need [cajr](https://github.com/skbkontur/cajrr) up and running.
 
 Setup test environment
 ----------------------
@@ -34,7 +30,7 @@ make check  # Only check, no write/restart cycle
 Repair your cluster:
 
 ```
-make run
+cagrr -k keyspace
 ```
 
 Analyze your logs in [Kibana](https://github.com/elastic/kibana) interface available at:
