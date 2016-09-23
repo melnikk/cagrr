@@ -1,0 +1,4 @@
+go get gopkg.in/gemnasium/logrus-airbrake-hook.v2
+go get github.com/skbkontur/cagrr
+go get golang.org/x/text
+go get golang.org/x/crypto
