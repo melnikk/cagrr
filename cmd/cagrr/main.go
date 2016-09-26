@@ -11,9 +11,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	flags "github.com/jessevdk/go-flags"
+	hook "github.com/melnikk/logrus-rabbitmq-hook"
 	"github.com/skbkontur/cagrr"
-	"github.com/sohlich/elogrus"
-	"gopkg.in/olivere/elastic.v3"
 )
 
 var opts struct {
@@ -23,7 +22,7 @@ var opts struct {
 	Steps     int     `short:"s" long:"steps" default:"1" description:"Steps to split token ranges to" env:"REPAIR_STEPS"`
 	Workers   int     `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
 	Intensity float32 `short:"i" long:"intensity" default:"1" description:"Intensity of repair" env:"REPAIR_INTENSITY"`
-	Verbosity string  `short:"v" long:"verbosity" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
+	Verbosity string  `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
 	App       string  `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
 	Callback  string  `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
 	From      int     `short:"f" long:"from" default:"0" description:"id of fragment to start repair from"`
@@ -34,6 +33,7 @@ var repaired = new(int32)
 
 func main() {
 	flags.Parse(&opts)
+	initLog()
 	go server()
 	repair()
 }
@@ -95,24 +95,16 @@ func repairStatus(w http.ResponseWriter, req *http.Request) {
 }
 
 func initLog() {
-	url := os.Getenv("ELASTICSEARCH_URL")
+	url := os.Getenv("LOG_STREAM_URL")
 	index := fmt.Sprintf("devops-%s", opts.App)
 
-	client, err := elastic.NewClient(elastic.SetURL(url))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"url": url,
-		}).Panic(err)
-	}
 	level, _ := log.ParseLevel(opts.Verbosity)
-	hook, err := elogrus.NewElasticHook(client, opts.Host, level, index)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"url":   url,
-			"index": index,
-		}).Panic(err)
-	}
+	fmt.Println(opts.Verbosity, level)
+	log.SetLevel(level)
 
-	logger := log.New()
-	logger.Hooks.Add(hook)
+	hook := hook.New(index, url, "devops", "devops")
+	log.AddHook(hook)
+	log.WithFields(log.Fields{
+		"url": url,
+	}).Info("Started logger amqp hook")
 }

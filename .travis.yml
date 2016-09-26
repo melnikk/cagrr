@@ -32,6 +32,7 @@ before_install:
 - go get github.com/jessevdk/go-flags
 - go get github.com/gliderlabs/logspout
 - go get github.com/looplab/logspout-logstash
+- go get github.com/melnikk/logrus-rabbitmq-hook
 install:
 - make test
 script:
