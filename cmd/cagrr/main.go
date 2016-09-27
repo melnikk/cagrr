@@ -28,7 +28,7 @@ var opts struct {
 	From      int     `short:"f" long:"from" default:"0" description:"id of fragment to start repair from"`
 }
 
-var count int
+var count = new(int32)
 var repaired = new(int32)
 
 func main() {
@@ -47,7 +47,7 @@ func repair() {
 	}
 
 	ring, _ := result.Get(opts.Steps)
-	count = ring.Count()
+	atomic.StoreInt32(count, int32(ring.Count()))
 	owner, _ := user.Current()
 	callback := fmt.Sprintf("http://%s/status", opts.Callback)
 
@@ -77,17 +77,30 @@ func repairStatus(w http.ResponseWriter, req *http.Request) {
 	var status cagrr.RepairStatus
 	err := json.Unmarshal(body, &status)
 	if err == nil {
+		totalFragments := atomic.LoadInt32(count)
+		repairedFragments := atomic.LoadInt32(repaired)
+		percent := repairedFragments * 100 / totalFragments
+
 		log.WithFields(log.Fields{
-			"count":   status.Count,
-			"message": status.Message,
-			"isError": status.Error,
-			"total":   status.Total,
-			"type":    status.Type,
+			"count":             status.Count,
+			"message":           status.Message,
+			"session":           status.Session,
+			"command":           status.Command,
+			"start":             status.Start,
+			"finish":            status.Finish,
+			"keyspace":          status.Keyspace,
+			"options":           status.Options,
+			"duration":          status.Duration,
+			"isError":           status.Error,
+			"total":             status.Total,
+			"type":              status.Type,
+			"totalFragments":    totalFragments,
+			"repairedFragments": repairedFragments,
+			"percent":           percent,
 		}).Debug("Range status received")
 
 		if status.Type == "COMPLETE" {
-			percent := atomic.AddInt32(repaired, 1) * int32(100) / int32(count)
-			fmt.Printf("\r%d/%d=%d%%", atomic.AddInt32(repaired, 0), count, percent)
+			atomic.AddInt32(repaired, 1)
 		}
 	} else {
 		log.Warn(err)

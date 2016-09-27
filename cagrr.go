@@ -51,12 +51,19 @@ type Repair struct {
 
 // RepairStatus keeps status of repair
 type RepairStatus struct {
-	ID      int64  `json:"id"`
-	Message string `json:"message"`
-	Error   bool   `json:"error"`
-	Type    string `json:"type"`
-	Count   int    `json:"count"`
-	Total   int    `json:"total"`
+	ID       int64  `json:"id"`
+	Message  string `json:"message"`
+	Error    bool   `json:"error"`
+	Type     string `json:"type"`
+	Count    int    `json:"count"`
+	Total    int    `json:"total"`
+	Session  string `json:"session"`
+	Command  int    `json:"command"`
+	Start    string `json:"start"`
+	Finish   string `json:"finish"`
+	Keyspace string `json:"keyspace"`
+	Options  string `json:"options"`
+	Duration int    `json:"duration"`
 }
 
 // Get the Ring
