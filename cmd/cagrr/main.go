@@ -77,6 +77,10 @@ func repairStatus(w http.ResponseWriter, req *http.Request) {
 	var status cagrr.RepairStatus
 	err := json.Unmarshal(body, &status)
 	if err == nil {
+		if status.Type == "COMPLETE" {
+			atomic.AddInt32(repaired, 1)
+		}
+
 		totalFragments := atomic.LoadInt32(count)
 		repairedFragments := atomic.LoadInt32(repaired)
 		percent := repairedFragments * 100 / totalFragments
@@ -99,9 +103,6 @@ func repairStatus(w http.ResponseWriter, req *http.Request) {
 			"percent":           percent,
 		}).Debug("Range status received")
 
-		if status.Type == "COMPLETE" {
-			atomic.AddInt32(repaired, 1)
-		}
 	} else {
 		log.Warn(err)
 	}
