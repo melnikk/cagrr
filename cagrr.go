@@ -20,9 +20,12 @@ func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
 
 // Ring represents several node combined in ring
 type Ring struct {
-	Host   string
-	Port   int
-	Tokens []Token `json:"tokens"`
+	Host        string
+	Port        int
+	Cluster     int     `json:"cluster"`
+	Name        string  `json:"name"`
+	Partitioner string  `json:"partitioner"`
+	Tokens      []Token `json:"tokens"`
 }
 
 // Token represents primary key range
@@ -33,63 +36,65 @@ type Token struct {
 
 // Fragment of Token range for repair
 type Fragment struct {
-	ID    int
-	Start string `json:"start"`
-	End   string `json:"end"`
+	ID       int    `json:"id"`
+	Endpoint string `json:"endpoint"`
+	Start    string `json:"start"`
+	End      string `json:"end"`
 }
 
 // Repair is a Unit of repair work
 type Repair struct {
-	ID       int64             `json:"id"`
-	Keyspace string            `json:"keyspace"`
-	Cause    string            `json:"cause"`
-	Owner    string            `json:"owner"`
-	Options  map[string]string `json:"options"`
-	Callback string            `json:"callback"`
-	Message  string            `json:"message"`
+	ID       int64    `json:"id"`
+	Fragment Fragment `json:"fragment"`
+	Callback string   `json:"callback"`
+	Keyspace string   `json:"keyspace"`
 }
 
 // RepairStatus keeps status of repair
 type RepairStatus struct {
-	ID       int64  `json:"id"`
-	Message  string `json:"message"`
-	Error    bool   `json:"error"`
-	Type     string `json:"type"`
-	Count    int    `json:"count"`
-	Total    int    `json:"total"`
-	Session  string `json:"session"`
+	Repair   Repair `json:"repair"`
 	Command  int    `json:"command"`
-	Start    string `json:"start"`
-	Finish   string `json:"finish"`
-	Keyspace string `json:"keyspace"`
-	Options  string `json:"options"`
+	Count    int    `json:"count"`
 	Duration int    `json:"duration"`
+	Error    bool   `json:"error"`
+	Message  string `json:"message"`
+	Session  string `json:"session"`
+	Total    int    `json:"total"`
+	Type     string `json:"type"`
 }
 
 // Get the Ring
-func (r Ring) Get(slices int) (Ring, error) {
-	url := fmt.Sprintf("http://%s:%d/ring/%d", r.Host, r.Port, slices)
-	res, _ := http.Get(url)
-	response, _ := ioutil.ReadAll(res.Body)
-	err := json.Unmarshal(response, &r)
+func (r Ring) get() (Ring, error) {
+	url := fmt.Sprintf("http://%s:%d/ring/%d", r.Host, r.Port, r.Cluster)
+	res, err := http.Get(url)
+	if err == nil {
+		response, _ := ioutil.ReadAll(res.Body)
+		err = json.Unmarshal(response, &r)
+	}
 	return r, err
 }
 
+// RegisterStatus of repair
+func (r Ring) RegisterStatus(status RepairStatus) (RepairStatus, error) {
+	//status.Percent = 100
+	return status, nil
+}
+
 // Repair ring
-func (r Ring) Repair(keyspace string, from int, cause string, owner string, callback string) ([]Repair, []error) {
+func (r Ring) Repair(keyspace string, callback string) ([]Repair, error) {
 	count := r.Count()
 	repairs := make([]Repair, count)
-	errors := make([]error, count)
-	for _, token := range r.Tokens {
-		for _, frag := range token.Ranges {
-			if frag.ID > from {
-				repair, err := frag.Repair(r, keyspace, cause, owner, callback)
+	r, err := r.get()
+	if err == nil {
+		for _, token := range r.Tokens {
+			for _, frag := range token.Ranges {
+				repair := frag.Repair(r, keyspace, callback)
 				repairs = append(repairs, repair)
-				errors = append(errors, err)
 			}
 		}
+		return repairs, nil
 	}
-	return repairs, errors
+	return nil, err
 }
 
 // Count fragments of ring
@@ -104,28 +109,26 @@ func (r Ring) Count() int {
 }
 
 // Repair fragment
-func (f Fragment) Repair(ring Ring, keyspace string, cause string, owner string, callback string) (Repair, error) {
-	options := &Repair{
+func (f Fragment) Repair(ring Ring, keyspace string, callback string) Repair {
+	repair := Repair{
+		Fragment: f,
 		Keyspace: keyspace,
-		Cause:    cause,
-		Owner:    owner,
 		Callback: callback,
-		Options: map[string]string{
-			"parallelism": "parallel",
-			"ranges":      fmt.Sprintf("%s:%s", f.Start, f.End),
-		},
 	}
 
-	url := fmt.Sprintf("http://%s:%d/repair", ring.Host, ring.Port)
+	return repair
+}
 
-	buf, _ := json.Marshal(options)
+// Run repair in cluster
+func (r *Repair) Run(host string, port, cluster int) error {
+	url := fmt.Sprintf("http://%s:%d/repair/%d", host, port, cluster)
+
+	buf, err := json.Marshal(r)
 	body := bytes.NewBuffer(buf)
-	r, err := http.Post(url, "application/json", body)
-	var repair Repair
+	res, err := http.Post(url, "application/json", body)
 	if err == nil {
-		response, _ := ioutil.ReadAll(r.Body)
-		err = json.Unmarshal(response, &repair)
+		response, _ := ioutil.ReadAll(res.Body)
+		err = json.Unmarshal(response, r)
 	}
-
-	return repair, err
+	return err
 }

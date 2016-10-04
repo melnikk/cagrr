@@ -6,119 +6,142 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/user"
-	"sync/atomic"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/fatih/structs"
+	"github.com/jessevdk/go-flags"
 	hook "github.com/melnikk/logrus-rabbitmq-hook"
 	"github.com/skbkontur/cagrr"
 )
 
 var opts struct {
-	Host      string  `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service" env:"CAJRR_HOST"`
-	Port      int     `short:"p" long:"port" default:"8080" description:"CAJRR port" env:"CAJRR_PORT"`
-	Keyspace  string  `short:"k" long:"keyspace" default:"*" description:"Keyspace to repair" env:"REPAIR_KEYSPACE"`
-	Steps     int     `short:"s" long:"steps" default:"1" description:"Steps to split token ranges to" env:"REPAIR_STEPS"`
-	Workers   int     `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
-	Intensity float32 `short:"i" long:"intensity" default:"1" description:"Intensity of repair" env:"REPAIR_INTENSITY"`
-	Verbosity string  `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
-	App       string  `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
-	Callback  string  `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
-	From      int     `short:"f" long:"from" default:"0" description:"id of fragment to start repair from"`
+	Host      string `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service" env:"CAJRR_HOST"`
+	Port      int    `short:"p" long:"port" default:"8080" description:"CAJRR port" env:"CAJRR_PORT"`
+	Index     string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch" env:"REPAIR_INDEX"`
+	App       string `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
+	Workers   int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
+	Duration  string `short:"d" long:"duration" default:"5m" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
+	Callback  string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
+	Verbosity string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
 }
 
-var count = new(int32)
-var repaired = new(int32)
+var ring cagrr.Ring
 
 func main() {
-	flags.Parse(&opts)
-	initLog()
-	go server()
-	repair()
+	jobs := make(chan cagrr.Repair, opts.Workers)
+	fails := make(chan cagrr.RepairStatus)
+	wins := make(chan cagrr.RepairStatus)
+	go listen(jobs, fails, wins)
+	go schedule(jobs)
+	go repair(jobs)
+	go reschedule(fails, jobs)
+
+	for {
+		win := <-wins
+		report(win)
+	}
 }
 
-func repair() {
-	atomic.AddInt32(repaired, int32(opts.From))
+func init() {
+	flags.Parse(&opts)
 
-	result := cagrr.Ring{
+	ring = cagrr.Ring{
 		Host: opts.Host,
 		Port: opts.Port,
 	}
 
-	ring, _ := result.Get(opts.Steps)
-	atomic.StoreInt32(count, int32(ring.Count()))
-	owner, _ := user.Current()
-	callback := fmt.Sprintf("http://%s/status", opts.Callback)
+	level, _ := log.ParseLevel(opts.Verbosity)
+	log.SetLevel(level)
 
-	log.WithFields(log.Fields{
-		"keyspace": opts.Keyspace,
-		"from":     opts.From,
-		"host":     opts.Host,
-		"cause":    opts.App,
-		"owner":    owner.Name,
-		"callback": callback,
-	}).Info("Start repair ring")
-	ring.Repair(opts.Keyspace, opts.From, opts.App, owner.Name, callback)
-	defer fmt.Println()
+	url := os.Getenv("LOG_STREAM_URL")
+	if url != "" {
+		hook := hook.New(opts.Index, url, opts.App, opts.App)
+		log.AddHook(hook)
+		log.WithFields(log.Fields{
+			"url": url,
+		}).Info("Started logger amqp hook")
+	}
 }
 
-func server() {
+func listen(jobs chan<- cagrr.Repair, fails chan<- cagrr.RepairStatus, wins chan<- cagrr.RepairStatus) {
 	for {
 		log.Infof("Server listen at %s", opts.Callback)
 
-		http.HandleFunc("/status", repairStatus)
-		log.Fatal(http.ListenAndServe(opts.Callback, nil))
+		mux := http.NewServeMux()
+		mux.Handle("/status", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			body, _ := ioutil.ReadAll(req.Body)
+			var status cagrr.RepairStatus
+			var fail error
+			err := json.Unmarshal(body, &status)
+			if err == nil {
+				status, fail = ring.RegisterStatus(status)
+				if fail == nil {
+					log.WithFields(log.Fields(structs.Map(status))).Debug("Repair suceeded")
+					wins <- status
+				} else {
+					log.WithFields(log.Fields(structs.Map(status))).Warn("Fragment repair failed")
+					fails <- status
+				}
+			} else {
+				log.WithError(err).Warn("Invalid status received")
+			}
+		}))
+		log.Fatal(http.ListenAndServe(opts.Callback, mux))
 	}
 }
 
-func repairStatus(w http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
-	var status cagrr.RepairStatus
-	err := json.Unmarshal(body, &status)
-	if err == nil {
-		if status.Type == "COMPLETE" {
-			atomic.AddInt32(repaired, 1)
+func schedule(jobs chan<- cagrr.Repair) {
+	log.Debug("Init schedule loop")
+
+	keyspaces := []string{"testspace"}
+
+	duration, _ := time.ParseDuration(opts.Duration)
+	// when RepairStatus arrives then put in Reschedule Queue
+	go func() {
+		for {
+			log.Debugf("Starting complete schedule")
+			for _, keyspace := range keyspaces {
+				log.Debugf("Entering keyspace: %s", keyspace)
+				callback := fmt.Sprintf("http://%s/status", opts.Callback)
+				fragments, err := ring.Repair(keyspace, callback)
+				if err == nil {
+					for _, frag := range fragments {
+						log.WithFields(log.Fields(structs.Map(frag))).Debug("Fragment planning")
+						jobs <- frag
+					}
+				} else {
+					log.WithError(err).Error("Ring obtain error")
+				}
+			}
+
+			log.Infof("Scheduling complete. Sleeping for interval %s", opts.Duration)
+			time.Sleep(duration)
 		}
+	}()
 
-		totalFragments := atomic.LoadInt32(count)
-		repairedFragments := atomic.LoadInt32(repaired)
-		percent := repairedFragments * 100 / totalFragments
+}
 
-		log.WithFields(log.Fields{
-			"count":             status.Count,
-			"message":           status.Message,
-			"session":           status.Session,
-			"command":           status.Command,
-			"start":             status.Start,
-			"finish":            status.Finish,
-			"keyspace":          status.Keyspace,
-			"options":           status.Options,
-			"duration":          status.Duration,
-			"isError":           status.Error,
-			"total":             status.Total,
-			"type":              status.Type,
-			"totalFragments":    totalFragments,
-			"repairedFragments": repairedFragments,
-			"percent":           percent,
-		}).Debug("Range status received")
-
-	} else {
-		log.Warn(err)
+func repair(jobs chan cagrr.Repair) {
+	for {
+		job := <-jobs
+		err := job.Run(ring.Host, ring.Port, ring.Cluster)
+		if err == nil {
+			log.WithFields(log.Fields(structs.Map(job))).Debug("Repair started")
+		} else {
+			log.WithError(err).Warn("Failed to start repair")
+		}
 	}
 }
 
-func initLog() {
-	url := os.Getenv("LOG_STREAM_URL")
-	index := fmt.Sprintf("devops-%s", opts.App)
+func reschedule(fails <-chan cagrr.RepairStatus, jobs chan<- cagrr.Repair) {
+	for {
+		status := <-fails
+		jobs <- status.Repair
+		log.WithFields(log.Fields(structs.Map(status.Repair))).Info("Repair rescheduled after fail")
+	}
+}
 
-	level, _ := log.ParseLevel(opts.Verbosity)
-	fmt.Println(opts.Verbosity, level)
-	log.SetLevel(level)
-
-	hook := hook.New(index, url, "devops", "devops")
-	log.AddHook(hook)
-	log.WithFields(log.Fields{
-		"url": url,
-	}).Info("Started logger amqp hook")
+func report(result cagrr.RepairStatus) {
+	log.WithFields(log.Fields(structs.Map(result))).Info("Report received")
 }

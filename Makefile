@@ -27,7 +27,7 @@ build:
 	@cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
 
 run:
-	LOG_STREAM_URL=amqp://rabbit.example.com:5672 go run cmd/cagrr/main.go -v debug -k testspace -w 4 -s 1
+	LOG_STREAM_URL=amqp://elk-test:5672 go run cmd/cagrr/main.go -v debug -k testspace -w 4 -s 1
 
 integration: init
 	@go test -cover -tags="cagrr integration" -v ./...
