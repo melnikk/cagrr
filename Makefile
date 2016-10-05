@@ -29,8 +29,8 @@ build:
 run:
 	LOG_STREAM_URL=amqp://elk-test:5672 go run cmd/cagrr/main.go -v debug -k testspace -w 4 -s 1
 
-integration: init
-	@go test -cover -tags="cagrr integration" -v ./...
+integration:
+	@sleep 5 && go test -cover -tags="cagrr integration" -v ./...
 
 tar:
 	mkdir -p build/root/usr/local/bin
