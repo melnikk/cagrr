@@ -1,3 +1,12 @@
+go get github.com/docker/docker/api/types
+go get github.com/docker/docker/client
+go get github.com/docker/go-connections
+go get github.com/docker/go-units
+go get github.com/docker/distribution
+
+go get golang.org/x/net
+go get github.com/gocql/gocql
+
 go get gopkg.in/gemnasium/logrus-airbrake-hook.v2
 go get github.com/skbkontur/cagrr
 go get golang.org/x/text
