@@ -7,7 +7,7 @@ Anti-entropy Cassandra cluster tool. It uses [repair service](https://github.com
 
 Prerequisites
 -------------
-You need [cajr](https://github.com/skbkontur/cajrr) up and running.
+You need [cajrr](https://github.com/skbkontur/cajrr) up and running.
 
 Setup test environment
 ----------------------

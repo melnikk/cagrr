@@ -4,6 +4,6 @@ import (
 	"testing"
 )
 
-func TestTokens(t *testing.T) {
+func TestCount(t *testing.T) {
 	t.Skip("ok")
 }

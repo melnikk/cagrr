@@ -21,7 +21,7 @@ var opts struct {
 	Index     string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch" env:"REPAIR_INDEX"`
 	App       string `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
 	Workers   int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
-	Duration  string `short:"d" long:"duration" default:"5m" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
+	Duration  string `short:"d" long:"duration" default:"1h" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
 	Callback  string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
 	Verbosity string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
 }
@@ -37,8 +37,7 @@ func main() {
 	go repair(jobs)
 	go reschedule(fails, jobs)
 
-	for {
-		win := <-wins
+	for win := range wins {
 		report(win)
 	}
 }

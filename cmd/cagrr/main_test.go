@@ -1,3 +1,5 @@
+// +build integration
+
 package main
 
 import (
@@ -93,7 +95,7 @@ func makeHoles(t *testing.T) gocql.UUID {
 	s1 := rand.NewSource(time.Now().UnixNano())
 	r1 := rand.New(s1)
 	node := 1 + r1.Intn(2)
-	nodeName := fmt.Sprintf(`cagrr_cassandra%d_1`, node)
+	nodeName := fmt.Sprintf(`cajrr_cassandra%d_1`, node)
 	operateContainer(t, nodeName, `stop`)
 	time.Sleep(time.Second * 5)
 	t.Logf("Node %s stopped", nodeName)

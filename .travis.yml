@@ -1,7 +1,22 @@
 language: go
+sudo: required
+
 go:
 - 1.6
 - tip
+
+before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y rpm ruby-dev gcc make
+- gem install fpm
+- make prepare
+
+install:
+- make test
+
+script:
+- make packages
+
 notifications:
   webhooks:
     urls:
@@ -9,38 +24,12 @@ notifications:
     on_success: change
     on_failure: always
     on_start: never
-before_install:
-- sudo apt-get install -y rpm
-- sudo apt-get install ruby-dev gcc make
-- gem install fpm
-- go get github.com/axw/gocov/gocov
-- go get github.com/mattn/goveralls
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/modocache/gover
-- go get github.com/golang/lint/golint
-- go get github.com/onsi/ginkgo/ginkgo
-- go get github.com/onsi/gomega
-- go get github.com/sohlich/elogrus
-- go get github.com/Sirupsen/logrus
-- go get gopkg.in/olivere/elastic.v3
-- go get github.com/cyberdelia/go-metrics-graphite
-- go get github.com/rcrowley/go-metrics
-- go get github.com/cmceniry/golokia
-- go get github.com/lytics/gowrapmx4j
-- go get github.com/gocql/gocql
-- go get golang.org/x/net/context
-- go get github.com/jessevdk/go-flags
-- go get github.com/gliderlabs/logspout
-- go get github.com/looplab/logspout-logstash
-- go get github.com/melnikk/logrus-rabbitmq-hook
-install:
-- make test
-script:
-- make packages
+
 before_deploy:
 - export RELEASE_PKG_TAR=$(ls build/cagrr*.tar.gz)
 - export RELEASE_PKG_RPM=$(ls build/cagrr*.rpm)
 - export RELEASE_PKG_DEB=$(ls build/cagrr*.deb)
+
 deploy:
   provider: releases
   api_key:
@@ -51,5 +40,5 @@ deploy:
     - "${RELEASE_PKG_RPM}"
   skip_cleanup: true
   on:
-    tags: true
     repo: skbkontur/cagrr
+    tags: true
