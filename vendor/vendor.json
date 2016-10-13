@@ -3,10 +3,24 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "get",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "2avCvSn0XonfApKKuTMyiQmk7s0=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
 			"revisionTime": "2016-08-29T20:23:21Z"
+		},
+		{
+			"checksumSHA1": "iUzC0HRLcL0Iv8FzWzVySRdiCVA=",
+			"path": "github.com/boltdb/bolt",
+			"revision": "074dffcc83e9f421e261526d297cd93f22a34080",
+			"revisionTime": "2016-10-08T15:24:23Z"
+		},
+		{
+			"path": "go",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "Xz3hUrPvOYGWTuHrEryoYAj9zwg=",

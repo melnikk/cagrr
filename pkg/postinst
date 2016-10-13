@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+
+# Initial installation: $1 == 1
+# Upgrade: $1 == 2
+
+#if [ $1 -eq 1 ] ; then
+  if ! getent group "cagrr" > /dev/null 2>&1 ; then
+    groupadd -r "cagrr"
+  fi
+  if ! getent passwd "cagrr" > /dev/null 2>&1 ; then
+    useradd -r -g cagrr -d /usr/share/cagrr -s /sbin/nologin \
+      -c "cagrr user" cagrr
+  fi
+
+  mkdir -p /etc/cagrr
+  mkdir -p /var/log/cagrr
+  chown -R cagrr:cagrr /var/log/cagrr
+  chmod 755 /var/log/cagrr
+
+  if [ -x /bin/systemctl ] ; then
+    /bin/systemctl daemon-reload
+    /bin/systemctl enable cagrr.service
+  elif [ -x /sbin/chkconfig ] ; then
+    /sbin/chkconfig --add cagrr
+  fi
+#fi

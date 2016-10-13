@@ -26,3 +26,5 @@ run.sh
 
 build/
 .idea/
+vendor/*/
+junit.xml

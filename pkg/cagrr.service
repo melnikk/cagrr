@@ -1,0 +1,17 @@
+[Unit]
+Description=ELK streams
+After=network-online.target
+
+[Service]
+User=cagrr
+Group=cagrr
+ExecStart=/usr/bin/cagrr -config=/etc/cagrr/config.yml
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+Restart=always
+LimitMEMLOCK=infinity
+LimitNOFILE=49152
+
+[Install]
+WantedBy=multi-user.target
