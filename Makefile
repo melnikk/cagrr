@@ -18,7 +18,7 @@ test:
 
 build:
 	mkdir build
-	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
+	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/root/usr/bin/cagrr
 
 run:
 	go run cmd/cagrr/main.go -v debug
