@@ -7,8 +7,10 @@ LICENSE := "BSD"
 default: clean prepare test build packages
 
 prepare:
-		go get github.com/kardianos/govendor
-		govendor sync
+	go get -v github.com/onsi/ginkgo/ginkgo
+	go get -v github.com/onsi/gomega
+	go get github.com/kardianos/govendor
+	govendor sync
 
 clean:
 	@rm -rf build
