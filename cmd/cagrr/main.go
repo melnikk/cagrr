@@ -18,17 +18,21 @@ import (
 var version = "devel"
 
 var opts struct {
-	Host      string `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service" env:"CAJRR_HOST"`
-	Port      int    `short:"p" long:"port" default:"8080" description:"CAJRR port" env:"CAJRR_PORT"`
-	Index     string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch" env:"REPAIR_INDEX"`
-	App       string `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
-	Workers   int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
-	Duration  string `short:"d" long:"duration" default:"1w" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
-	Callback  string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
-	Verbosity string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
+	Host       string `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service" env:"CAJRR_HOST"`
+	Port       int    `short:"p" long:"port" default:"8080" description:"CAJRR port" env:"CAJRR_PORT"`
+	Index      string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch" env:"REPAIR_INDEX"`
+	App        string `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
+	Workers    int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
+	Duration   string `short:"d" long:"duration" default:"1w" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
+	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
+	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
+	ConfigFile string `long:"config" default:"/etc/cagrr/config.yml" description:"Configuration file name"`
 }
 
-var ring cagrr.Ring
+var (
+	config cagrr.Config
+	ring   cagrr.Ring
+)
 
 func main() {
 	jobs := make(chan cagrr.Repair, opts.Workers)
@@ -46,11 +50,7 @@ func main() {
 
 func init() {
 	flags.Parse(&opts)
-
-	ring = cagrr.Ring{
-		Host: opts.Host,
-		Port: opts.Port,
-	}
+	config, _ = cagrr.ReadConfig(opts.ConfigFile)
 
 	level, _ := log.ParseLevel(opts.Verbosity)
 	log.SetLevel(level)
@@ -95,31 +95,31 @@ func listen(jobs chan<- cagrr.Repair, fails chan<- cagrr.RepairStatus, wins chan
 func schedule(jobs chan<- cagrr.Repair) {
 	log.Debug("Init schedule loop")
 
-	keyspaces := []string{"testspace"}
-
 	duration, _ := time.ParseDuration(opts.Duration)
 	// when RepairStatus arrives then put in Reschedule Queue
-	go func() {
-		for {
-			log.Debugf("Starting complete schedule")
-			for _, keyspace := range keyspaces {
-				log.Debugf("Entering keyspace: %s", keyspace)
-				callback := fmt.Sprintf("http://%s/status", opts.Callback)
-				fragments, err := ring.Repair(keyspace, callback)
-				if err == nil {
-					for _, frag := range fragments {
-						log.WithFields(log.Fields(structs.Map(frag))).Debug("Fragment planning")
-						jobs <- frag
+	for _, cluster := range config.Clusters {
+		go func(keyspaces []string) {
+			for {
+				log.Debugf("Starting complete schedule")
+				for _, keyspace := range keyspaces {
+					log.Debugf("Entering keyspace: %s", keyspace)
+					callback := fmt.Sprintf("http://%s/status", opts.Callback)
+					fragments, err := ring.Repair(keyspace, callback)
+					if err == nil {
+						for _, frag := range fragments {
+							log.WithFields(log.Fields(structs.Map(frag))).Debug("Fragment planning")
+							jobs <- frag
+						}
+					} else {
+						log.WithError(err).Error("Ring obtain error")
 					}
-				} else {
-					log.WithError(err).Error("Ring obtain error")
 				}
-			}
 
-			log.Infof("Scheduling complete. Sleeping for interval %s", opts.Duration)
-			time.Sleep(duration)
-		}
-	}()
+				log.Infof("Scheduling complete. Sleeping for interval %s", opts.Duration)
+				time.Sleep(duration)
+			}
+		}(cluster.Keyspaces)
+	}
 
 }
 

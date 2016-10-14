@@ -1,14 +1,12 @@
 ---
 clusters:
-  -
-    host: 127.0.0.1
+  - host: 127.0.0.1
     port: 8080
     interval: 1w
     keyspaces:
       - space1
       - space2
-  -
-    host: 127.0.0.1
+  - host: 127.0.0.1
     port: 8080
     interval: 2w
     keyspaces:

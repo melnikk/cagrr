@@ -23,9 +23,9 @@ var _ = Describe("Config", func() {
 		})
 
 		It("Should read deep structure of Keyspaces", func() {
-			/*config, _ := ReadConfig("pkg/config.yml")
+			config, _ := ReadConfig("pkg/config.yml")
 
-			Expect(config.Clusters[0]).To(BeNil())*/
+			Expect(config.Clusters[0]).To(Equal(ClusterConfig{"127.0.0.1", 8080, "1w", []string{"space1", "space2"}}))
 		})
 
 	})

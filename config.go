@@ -14,7 +14,10 @@ type Config struct {
 
 // ClusterConfig contains configuration of cluster item
 type ClusterConfig struct {
-	host string `yaml:"host"`
+	Host      string   `yaml:"host"`
+	Port      int      `yaml:"port"`
+	Interval  string   `yaml:"interval"`
+	Keyspaces []string `yaml:"keyspaces"`
 }
 
 // ReadConfig reads configuration file into struct
