@@ -9,22 +9,13 @@ Prerequisites
 -------------
 You need [cajrr](https://github.com/skbkontur/cajrr) up and running.
 
-Setup test environment
-----------------------
-
-Initialize test Cassandra 2.2 cluster (you need ansible, docker and docker-compose installed):
-
-```
-make setup
-```
-
 Run tests:
 
 ```
-make test   # Make a "hole" and check existence
+make integration   # Make a "hole" and check existence
 ```
 ```
-make check  # Only check, no write/restart cycle
+make check         # Only check, no write/restart cycle
 ```
 
 Repair your cluster:

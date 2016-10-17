@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
+
+	"github.com/skbkontur/cagrr/repair"
 )
 
 const (
@@ -17,6 +20,24 @@ type int64arr []int64
 func (a int64arr) Len() int           { return len(a) }
 func (a int64arr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
+
+// Fixer repairs cluster
+type Fixer interface {
+	Repair(keyspace string, callback string) ([]Repair, error)
+}
+
+// Config is a configuration file struct
+type Config struct {
+	Clusters []ClusterConfig `yaml:"clusters"`
+}
+
+// ClusterConfig contains configuration of cluster item
+type ClusterConfig struct {
+	Host      string   `yaml:"host"`
+	Port      int      `yaml:"port"`
+	Interval  string   `yaml:"interval"`
+	Keyspaces []string `yaml:"keyspaces"`
+}
 
 // Ring represents several node combined in ring
 type Ring struct {
@@ -46,8 +67,12 @@ type Fragment struct {
 type Repair struct {
 	ID       int64    `json:"id"`
 	Fragment Fragment `json:"fragment"`
-	Callback string   `json:"callback"`
-	Keyspace string   `json:"keyspace"`
+	Duration time.Duration
+	Host     string
+	Port     int
+	Cluster  int
+	Callback string `json:"callback"`
+	Keyspace string `json:"keyspace"`
 }
 
 // RepairStatus keeps status of repair
@@ -80,10 +105,17 @@ func (r Ring) RegisterStatus(status RepairStatus) (RepairStatus, error) {
 	return status, nil
 }
 
+// Obtain ring
+func (r Ring) Obtain(keyspace, callback string, cluster int) ([]repair.Runner, error) {
+	r.Cluster = cluster
+	result, err := r.Repair(keyspace, callback)
+	return []repair.Runner(result), err
+}
+
 // Repair ring
-func (r Ring) Repair(keyspace string, callback string) ([]Repair, error) {
+func (r Ring) Repair(keyspace string, callback string) ([]repair.Runner, error) {
 	count := r.Count()
-	repairs := make([]Repair, count)
+	repairs := make([]repair.Runner, count)
 	r, err := r.get()
 	if err == nil {
 		for _, token := range r.Tokens {
@@ -109,9 +141,12 @@ func (r Ring) Count() int {
 }
 
 // Repair fragment
-func (f Fragment) Repair(ring Ring, keyspace string, callback string) Repair {
+func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
 	repair := Repair{
 		Fragment: f,
+		Host:     r.Host,
+		Port:     r.Port,
+		Cluster:  r.Cluster,
 		Keyspace: keyspace,
 		Callback: callback,
 	}
@@ -120,8 +155,9 @@ func (f Fragment) Repair(ring Ring, keyspace string, callback string) Repair {
 }
 
 // Run repair in cluster
-func (r *Repair) Run(host string, port, cluster int) error {
-	url := fmt.Sprintf("http://%s:%d/repair/%d", host, port, cluster)
+func (r Repair) Run() error {
+
+	url := fmt.Sprintf("http://%s:%d/repair/%d", r.Host, r.Port, r.Cluster)
 
 	buf, err := json.Marshal(r)
 	body := bytes.NewBuffer(buf)
@@ -131,4 +167,10 @@ func (r *Repair) Run(host string, port, cluster int) error {
 		err = json.Unmarshal(response, r)
 	}
 	return err
+}
+
+// ThenSleep sets interval of rescheduling
+func (r Repair) ThenSleep(duration time.Duration) repair.Runner {
+	r.Duration = duration
+	return r
 }
