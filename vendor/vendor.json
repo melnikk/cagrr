@@ -57,6 +57,12 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "9bb9f0998d48b31547d975974935ae9b48c7a03c",
 			"revisionTime": "2016-10-11T23:07:22Z"
+		},
+		{
+			"checksumSHA1": "21kDrz4DnDppRHgK7vVmOFwgcSQ=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+			"revisionTime": "2016-09-28T15:37:09Z"
 		}
 	],
 	"rootPath": "github.com/skbkontur/cagrr"
