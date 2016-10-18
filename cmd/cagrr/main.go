@@ -35,6 +35,7 @@ var (
 	configuration config.Config
 	logger        logs.Logger
 	fixer         repair.Fixer
+	registrator   http.Registrator
 	obtainer      http.Obtainer
 	server        http.Server
 	scheduler     schedule.Scheduler
@@ -43,8 +44,8 @@ var (
 
 func main() {
 	jobs := make(chan repair.Runner, opts.Workers)
-	wins := make(chan http.Status)
-	fails := make(chan http.Status)
+	wins := make(chan http.Status, opts.Workers)
+	fails := make(chan http.Status, opts.Workers)
 
 	go server.
 		At(opts.Callback).

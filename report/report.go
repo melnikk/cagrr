@@ -22,8 +22,7 @@ var (
 func CreateReporter(logger logs.Logger) Reporter {
 	log = logger
 	rep := reporter{}
-	result := Reporter(rep)
-	return result
+	return rep
 }
 
 func (r reporter) Report(result http.Status) Reporter {

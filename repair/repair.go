@@ -3,7 +3,6 @@ package repair
 import (
 	"time"
 
-	"github.com/fatih/structs"
 	"github.com/skbkontur/cagrr/logs"
 )
 
@@ -38,7 +37,7 @@ func (f fixer) Fix(jobs <-chan Runner) {
 	for job := range jobs {
 		err := job.Run()
 		if err == nil {
-			log.WithFields(structs.Map(job)).Debug("Repair job started")
+			log.WithFields(job).Debug("Repair job started")
 		} else {
 			log.WithError(err).Warn("Failed to start repair")
 		}

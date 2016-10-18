@@ -6,7 +6,7 @@ import (
 
 	"github.com/skbkontur/cagrr"
 
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 )
 
 // Reader reads configuration from sources

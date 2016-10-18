@@ -38,7 +38,9 @@ type scheduler struct {
 // CreateScheduler initializes http listener
 func CreateScheduler(logger logs.Logger) Scheduler {
 	log = logger
-	return scheduler{}
+	return scheduler{
+		schedule: make(chan repair.Runner, 5),
+	}
 }
 
 func (s scheduler) OnClusters(clusters []cagrr.ClusterConfig) Scheduler {
@@ -77,7 +79,7 @@ func (s scheduler) ScheduleCluster(cid int, cluster cagrr.ClusterConfig) {
 		if err == nil {
 			for _, frag := range fragments {
 				log.WithFields(frag).Debug("Fragment planning")
-				s.jobs <- repair.Runner(frag).ThenSleep(s.Duration)
+				s.schedule <- frag
 			}
 		} else {
 			log.WithError(err).Error("Ring obtain error")

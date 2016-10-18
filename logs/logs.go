@@ -36,35 +36,34 @@ func CreateLogger(verb, index, app string) Logger {
 	}
 
 	log := logger{}
-	result := Logger(log)
-	return result
+	return log
 }
 
 func (l logger) WithFields(str interface{}) Logger {
 	l.fields = structs.Map(str)
-	return Logger(l)
+	return l
 }
 func (l logger) WithError(err error) Logger {
 	l.err = err
-	return Logger(l)
+	return l
 }
 func (l logger) Debug(message interface{}) Logger {
 	logrus.WithFields(l.fields).Debug(message)
-	return Logger(l)
+	return l
 }
 func (l logger) Error(message interface{}) Logger {
 	logrus.WithError(l.err).WithFields(l.fields).Error(message)
-	return Logger(l)
+	return l
 }
 func (l logger) Fatal(message interface{}) Logger {
-	logrus.WithFields(l.fields).Fatal(message)
-	return Logger(l)
+	logrus.WithError(l.err).WithFields(l.fields).Fatal(message)
+	return l
 }
 func (l logger) Warn(message interface{}) Logger {
-	logrus.WithFields(l.fields).Warn(message)
-	return Logger(l)
+	logrus.WithError(l.err).WithFields(l.fields).Warn(message)
+	return l
 }
 func (l logger) Info(message interface{}) Logger {
 	logrus.WithFields(l.fields).Info(message)
-	return Logger(l)
+	return l
 }

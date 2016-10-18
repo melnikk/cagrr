@@ -45,29 +45,28 @@ type serverMux struct {
 }
 
 var (
-	server serverMux
-	log    logs.Logger
+	log logs.Logger
 )
 
 // CreateServer initializes http listener
 func CreateServer(logger logs.Logger) Server {
 	log = logger
-	result := Server(server)
-	return result
+	server := serverMux{}
+	return server
 }
 
 func (s serverMux) At(address string) Server {
 	s.address = address
-	return Server(s)
+	return s
 }
 func (s serverMux) Using(registrator Registrator) Server {
 	s.registrator = registrator
-	return Server(s)
+	return s
 }
 func (s serverMux) Through(wins chan Status, fails chan Status) Server {
 	s.wins = wins
 	s.fails = fails
-	return Server(s)
+	return s
 }
 func (s serverMux) Serve() {
 	for {
@@ -86,7 +85,7 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 	var fail error
 	err := json.Unmarshal(body, &status)
 	if err == nil {
-		status, fail = s.registrator.RegisterStatus(status)
+		status, fail = s.CheckStatus(status)
 
 		if fail == nil {
 			log.WithFields(structs.Map(status)).Debug("Repair suceeded")
@@ -98,4 +97,10 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 	} else {
 		log.WithError(err).Warn("Invalid status received")
 	}
+}
+
+// CheckStatus of repair
+func (s serverMux) CheckStatus(status Status) (Status, error) {
+	//status.Percent = 100
+	return status, nil
 }

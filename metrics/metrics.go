@@ -21,12 +21,9 @@ var (
 func CreateMeter(logger *logs.Logger) Meter {
 	log = logger
 	meter = metrics{}
-	result := Meter(meter)
-	return result
+	return meter
 }
 
 func (m metrics) Measure(metric string, value int) Meter {
-
-	result := Meter(m)
-	return result
+	return m
 }

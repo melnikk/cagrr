@@ -99,17 +99,11 @@ func (r Ring) get() (Ring, error) {
 	return r, err
 }
 
-// RegisterStatus of repair
-func (r Ring) RegisterStatus(status RepairStatus) (RepairStatus, error) {
-	//status.Percent = 100
-	return status, nil
-}
-
 // Obtain ring
 func (r Ring) Obtain(keyspace, callback string, cluster int) ([]repair.Runner, error) {
 	r.Cluster = cluster
 	result, err := r.Repair(keyspace, callback)
-	return []repair.Runner(result), err
+	return result, err
 }
 
 // Repair ring
@@ -164,7 +158,7 @@ func (r Repair) Run() error {
 	res, err := http.Post(url, "application/json", body)
 	if err == nil {
 		response, _ := ioutil.ReadAll(res.Body)
-		err = json.Unmarshal(response, r)
+		err = json.Unmarshal(response, &r)
 	}
 	return err
 }
