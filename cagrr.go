@@ -67,10 +67,10 @@ type Fragment struct {
 type Repair struct {
 	ID       int64    `json:"id"`
 	Fragment Fragment `json:"fragment"`
-	Duration time.Duration
-	Host     string
-	Port     int
-	Cluster  int
+	duration time.Duration
+	host     string
+	port     int
+	cluster  int
 	Callback string `json:"callback"`
 	Keyspace string `json:"keyspace"`
 }
@@ -138,9 +138,9 @@ func (r Ring) Count() int {
 func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
 	repair := Repair{
 		Fragment: f,
-		Host:     r.Host,
-		Port:     r.Port,
-		Cluster:  r.Cluster,
+		host:     r.Host,
+		port:     r.Port,
+		cluster:  r.Cluster,
 		Keyspace: keyspace,
 		Callback: callback,
 	}
@@ -151,7 +151,7 @@ func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
 // Run repair in cluster
 func (r Repair) Run() error {
 
-	url := fmt.Sprintf("http://%s:%d/repair/%d", r.Host, r.Port, r.Cluster)
+	url := fmt.Sprintf("http://%s:%d/repair/%d", r.host, r.port, r.cluster)
 
 	buf, err := json.Marshal(r)
 	body := bytes.NewBuffer(buf)
@@ -165,6 +165,6 @@ func (r Repair) Run() error {
 
 // ThenSleep sets interval of rescheduling
 func (r Repair) ThenSleep(duration time.Duration) repair.Runner {
-	r.Duration = duration
+	r.duration = duration
 	return r
 }

@@ -18,6 +18,9 @@ clean:
 test:
 	@go test -cover -tags="cagrr" -v ./...
 
+integration:
+	@go test -cover -tags="integration" -v ./...
+
 build:
 	mkdir build
 	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr

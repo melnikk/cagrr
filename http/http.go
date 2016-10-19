@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/fatih/structs"
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/logs"
 	"github.com/skbkontur/cagrr/repair"
@@ -88,10 +87,10 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 		status, fail = s.CheckStatus(status)
 
 		if fail == nil {
-			log.WithFields(structs.Map(status)).Debug("Repair suceeded")
+			log.WithFields(status).Debug("Repair suceeded")
 			s.wins <- status
 		} else {
-			log.WithFields(structs.Map(status)).Warn("Fragment repair failed")
+			log.WithFields(status).Warn("Fragment repair failed")
 			s.fails <- status
 		}
 	} else {

@@ -1,7 +1,6 @@
 package report
 
 import (
-	"github.com/fatih/structs"
 	"github.com/skbkontur/cagrr/http"
 	"github.com/skbkontur/cagrr/logs"
 )
@@ -26,6 +25,6 @@ func CreateReporter(logger logs.Logger) Reporter {
 }
 
 func (r reporter) Report(result http.Status) Reporter {
-	log.WithFields(structs.Map(result)).Info("Report received")
+	log.WithFields(result).Info("Report received")
 	return r
 }
