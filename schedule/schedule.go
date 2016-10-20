@@ -6,12 +6,12 @@ import (
 
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/http"
-	"github.com/skbkontur/cagrr/logs"
+	"github.com/skbkontur/cagrr/ops"
 	"github.com/skbkontur/cagrr/repair"
 )
 
 var (
-	log logs.Logger
+	log ops.Logger
 )
 
 // Scheduler creates jobs in time
@@ -36,7 +36,7 @@ type scheduler struct {
 }
 
 // CreateScheduler initializes http listener
-func CreateScheduler(logger logs.Logger) Scheduler {
+func CreateScheduler(logger ops.Logger) Scheduler {
 	log = logger
 	return scheduler{
 		schedule: make(chan repair.Runner, 5),

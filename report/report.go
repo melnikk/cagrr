@@ -2,7 +2,7 @@ package report
 
 import (
 	"github.com/skbkontur/cagrr/http"
-	"github.com/skbkontur/cagrr/logs"
+	"github.com/skbkontur/cagrr/ops"
 )
 
 // Reporter reports about progress
@@ -14,11 +14,11 @@ type reporter struct {
 }
 
 var (
-	log logs.Logger
+	log ops.Logger
 )
 
 // CreateReporter creates reporter of status
-func CreateReporter(logger logs.Logger) Reporter {
+func CreateReporter(logger ops.Logger) Reporter {
 	log = logger
 	rep := reporter{}
 	return rep

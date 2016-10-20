@@ -8,7 +8,7 @@ import (
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/config"
 	"github.com/skbkontur/cagrr/http"
-	"github.com/skbkontur/cagrr/logs"
+	"github.com/skbkontur/cagrr/ops"
 	"github.com/skbkontur/cagrr/repair"
 	"github.com/skbkontur/cagrr/report"
 	"github.com/skbkontur/cagrr/schedule"
@@ -29,17 +29,30 @@ var opts struct {
 	Version    bool   `long:"version" description:"Show version info and exit"`
 }
 
+// in/out streams
 var (
-	out           = os.Stdout
-	in            = os.Stdin
-	configuration config.Config
-	logger        logs.Logger
-	fixer         repair.Fixer
-	registrator   http.Registrator
-	obtainer      http.Obtainer
-	server        http.Server
-	scheduler     schedule.Scheduler
-	reporter      report.Reporter
+	out = os.Stdout
+	in  = os.Stdin
+)
+
+var configuration config.Config
+
+// ops dependencies
+var (
+	logger  ops.Logger
+	meter   ops.Meter
+	limiter ops.RateLimiter
+	breaker ops.CirquitBreaker
+)
+
+// subject dependencies
+var (
+	fixer       repair.Fixer
+	registrator http.Registrator
+	obtainer    http.Obtainer
+	server      http.Server
+	scheduler   schedule.Scheduler
+	reporter    report.Reporter
 )
 
 func main() {
@@ -58,6 +71,7 @@ func main() {
 		ReturnTo(opts.Callback).
 		Schedule(opts.Duration).
 		Reschedule(fails).To(jobs).
+		LimitRateBy(limiter).WithMeter(meter).
 		Forever()
 
 	go fixer.
@@ -72,7 +86,7 @@ func init() {
 	flags.Parse(&opts)
 	checkVersion()
 	// pinfold
-	logger = logs.CreateLogger(opts.Verbosity, opts.Index, opts.App)
+	logger = ops.CreateLogger(opts.Verbosity, opts.Index, opts.App)
 
 	var err error
 	configuration, err = config.CreateReader().Read(opts.ConfigFile)
@@ -80,7 +94,7 @@ func init() {
 		logger.WithError(err).Error("Error when reading configuration")
 	}
 
-	//meter := metrics.CreateMeter(logger)
+	meter = ops.CreateMeter(&logger)
 	server = http.CreateServer(logger)
 	scheduler = schedule.CreateScheduler(logger)
 	fixer = repair.CreateFixer(logger)

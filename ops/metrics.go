@@ -1,8 +1,4 @@
-package metrics
-
-import (
-	"github.com/skbkontur/cagrr/logs"
-)
+package ops
 
 // Meter measures metric
 type Meter interface {
@@ -14,11 +10,11 @@ type metrics struct {
 
 var (
 	meter metrics
-	log   *logs.Logger
+	log   *Logger
 )
 
 // CreateMeter creates measurer of metrics
-func CreateMeter(logger *logs.Logger) Meter {
+func CreateMeter(logger *Logger) Meter {
 	log = logger
 	meter = metrics{}
 	return meter

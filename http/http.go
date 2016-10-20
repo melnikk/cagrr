@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/skbkontur/cagrr"
-	"github.com/skbkontur/cagrr/logs"
+	"github.com/skbkontur/cagrr/ops"
 	"github.com/skbkontur/cagrr/repair"
 )
 
@@ -44,11 +44,11 @@ type serverMux struct {
 }
 
 var (
-	log logs.Logger
+	log ops.Logger
 )
 
 // CreateServer initializes http listener
-func CreateServer(logger logs.Logger) Server {
+func CreateServer(logger ops.Logger) Server {
 	log = logger
 	server := serverMux{}
 	return server

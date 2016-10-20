@@ -3,7 +3,7 @@ package repair
 import (
 	"time"
 
-	"github.com/skbkontur/cagrr/logs"
+	"github.com/skbkontur/cagrr/ops"
 )
 
 // Fixer starts repair cycle
@@ -21,11 +21,11 @@ type fixer struct {
 }
 
 var (
-	log logs.Logger
+	log ops.Logger
 )
 
 // CreateFixer creates fixer of clusters
-func CreateFixer(logger logs.Logger) Fixer {
+func CreateFixer(logger ops.Logger) Fixer {
 	log = logger
 	fixerImp := fixer{}
 	result := Fixer(fixerImp)
