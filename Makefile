@@ -7,6 +7,7 @@ LICENSE := "BSD"
 default: clean prepare test build packages
 
 prepare:
+	go get -v github.com/modocache/gover
 	go get -v golang.org/x/tools/cmd/cover
 	go get -v github.com/mattn/goveralls
 	go get -v github.com/onsi/ginkgo/ginkgo
@@ -18,7 +19,7 @@ clean:
 	@rm -rf build
 
 test:
-	@go test -cover -tags="cagrr" -v ./...
+	@go test -cover -coverprofile cover.out -tags="cagrr" -v ./... 
 
 integration:
 	@go test -cover -tags="integration" -v ./...
