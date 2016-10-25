@@ -21,7 +21,7 @@ type Scheduler interface {
 	ReturnTo(callback string) Scheduler
 	Reschedule(fails <-chan http.Status) Scheduler
 	To(jobs chan<- repair.Runner) Scheduler
-	Schedule(interval string) Scheduler
+	ScheduleFor(interval string) Scheduler
 	Forever()
 }
 
@@ -58,7 +58,7 @@ func (s scheduler) ReturnTo(callback string) Scheduler {
 	return s
 }
 
-func (s scheduler) Schedule(interval string) Scheduler {
+func (s scheduler) ScheduleFor(interval string) Scheduler {
 	log.Debug("Init schedule loop")
 
 	duration, _ := time.ParseDuration(interval)

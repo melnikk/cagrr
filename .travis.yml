@@ -11,8 +11,12 @@ before_install:
 - gem install fpm
 - make prepare
 
+env:
+  secure: "no1lmoNZvQX4WsIBICVODoSe7OWMeHy722+RY3bblh+J8RggxEgv4ZXSAIxXea92nD8lyuNuHsWJYg8AAisuPPQGfpnOyiIWPaTH9GN17lEGxdJU7r+PLH2OXsCaROhOtsdriryesGsrmMkzMjX+N2cF3UsYIt0ZJGyyMdd0KptdpcwXbEodIzNJ+BuhI06bcEAhGxC3yepHN8KqnNkMCazSnQRcdGkmzEkeXeMEeSyCvxsryZTojNtvCKsXE5Dlng3UbcKYkBlj276mu4E86wkh3kXSHkYLuRm45aM5NAH6cwcBd2P46f00pOhBODZv47pVZsYxHXhgkAr9RpJd+BMyZjP0RK0dwwhgPX4U65uMXlZlF9qL3CzV7ACli1QZRRTEcj4wRxACP1lVJOj49Y/QxN4CqtMqe+G61o9yeR+ap8c9joOool1jKoHNuoAf3CfzDEA9szD8Es0ywYmN+6YtDvBSN9LliCQyRLLRx6iOdBdL3EBut59/g8ejRx9mDl25JqhU+liaYRYUlf3UTCk6FhUjREXbwOch479z+PQeBr/43Z+7dhd34odg5g3dXAGkipWkGX9IoFCooYc1gWxfN1dWMflqm3MCrNdn+6UT7aSDszWCZLH9GJMDbnlZk1DRo9i8GBtdM4COjmXcutyWgSHTXQNqNtIgNLUMf8o="
+
 install:
 - make test
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 
 script:
 - make packages

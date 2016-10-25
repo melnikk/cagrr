@@ -39,10 +39,9 @@ var configuration config.Config
 
 // ops dependencies
 var (
-	logger  ops.Logger
-	meter   ops.Meter
-	limiter ops.RateLimiter
-	breaker ops.CirquitBreaker
+	logger    ops.Logger
+	meter     ops.Meter
+	regulator ops.Regulator
 )
 
 // subject dependencies
@@ -69,9 +68,8 @@ func main() {
 		OnClusters(configuration.Clusters).
 		Using(obtainer).
 		ReturnTo(opts.Callback).
-		Schedule(opts.Duration).
+		ScheduleFor(opts.Duration).
 		Reschedule(fails).To(jobs).
-		LimitRateBy(limiter).WithMeter(meter).
 		Forever()
 
 	go fixer.
