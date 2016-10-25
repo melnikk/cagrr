@@ -19,7 +19,7 @@ clean:
 	@rm -rf build
 
 test:
-	@go test -cover -coverprofile cover.out -tags="cagrr" -v ./... 
+	@ginkgo -r  -cover -coverpkg=./...  -trace -race
 
 integration:
 	@go test -cover -tags="integration" -v ./...
