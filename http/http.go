@@ -84,6 +84,7 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 	var fail error
 	err := json.Unmarshal(body, &status)
 	if err == nil {
+		status.Repair.StopMeasure()
 		status, fail = s.CheckStatus(status)
 
 		if fail == nil {

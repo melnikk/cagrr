@@ -40,7 +40,6 @@ var configuration config.Config
 // ops dependencies
 var (
 	logger    ops.Logger
-	meter     ops.Meter
 	regulator ops.Regulator
 )
 
@@ -76,6 +75,7 @@ func main() {
 		Fix(jobs)
 
 	for win := range wins {
+		regulator.LimitRateTo(win.Repair.Duration())
 		reporter.Report(win)
 	}
 }
@@ -84,7 +84,7 @@ func init() {
 	flags.Parse(&opts)
 	checkVersion()
 	// pinfold
-	logger = ops.CreateLogger(opts.Verbosity, opts.Index, opts.App)
+	logger = ops.NewLogger(opts.Verbosity, opts.Index, opts.App)
 
 	var err error
 	configuration, err = config.CreateReader().Read(opts.ConfigFile)
@@ -92,9 +92,9 @@ func init() {
 		logger.WithError(err).Error("Error when reading configuration")
 	}
 
-	meter = ops.CreateMeter(&logger)
+	regulator = ops.NewRegulator(logger, 5)
 	server = http.CreateServer(logger)
-	scheduler = schedule.CreateScheduler(logger)
+	scheduler = schedule.NewScheduler(logger, regulator)
 	fixer = repair.CreateFixer(logger)
 	reporter = report.CreateReporter(logger)
 	ring := cagrr.Ring{

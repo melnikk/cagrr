@@ -1,10 +1,6 @@
 package repair
 
-import (
-	"time"
-
-	"github.com/skbkontur/cagrr/ops"
-)
+import "github.com/skbkontur/cagrr/ops"
 
 // Fixer starts repair cycle
 type Fixer interface {
@@ -14,7 +10,7 @@ type Fixer interface {
 // Runner starts fragment repair
 type Runner interface {
 	Run() error
-	ThenSleep(duration time.Duration) Runner
+	ops.Meter
 }
 
 type fixer struct {

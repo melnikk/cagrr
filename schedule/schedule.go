@@ -12,6 +12,7 @@ import (
 
 var (
 	log ops.Logger
+	reg ops.Regulator
 )
 
 // Scheduler creates jobs in time
@@ -35,9 +36,10 @@ type scheduler struct {
 	Clusters []cagrr.ClusterConfig
 }
 
-// CreateScheduler initializes http listener
-func CreateScheduler(logger ops.Logger) Scheduler {
+// NewScheduler initializes loops for scheduling repair jobs
+func NewScheduler(logger ops.Logger, regulator ops.Regulator) Scheduler {
 	log = logger
+	reg = regulator
 	return scheduler{
 		schedule: make(chan repair.Runner, 5),
 	}
@@ -78,6 +80,10 @@ func (s scheduler) ScheduleCluster(cid int, cluster cagrr.ClusterConfig) {
 		fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
 		if err == nil {
 			for _, frag := range fragments {
+
+				reg.Limit()
+				frag.StartMeasure()
+
 				log.WithFields(frag).Debug("Fragment planning")
 				s.schedule <- frag
 			}
@@ -105,7 +111,7 @@ func (s scheduler) Forever() {
 			s.jobs <- job
 		case fail := <-s.fails:
 			log.WithFields(fail).Debug("received fail")
-			s.jobs <- fail.Repair
+			s.jobs <- &fail.Repair
 		default:
 			log.Debug("no activity")
 			time.Sleep(time.Second * 10)

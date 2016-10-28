@@ -71,6 +71,8 @@ type Repair struct {
 	host     string
 	port     int
 	cluster  int
+	T1       time.Time
+	T2       time.Time
 	Callback string `json:"callback"`
 	Keyspace string `json:"keyspace"`
 }
@@ -115,7 +117,7 @@ func (r Ring) Repair(keyspace string, callback string) ([]repair.Runner, error) 
 		for _, token := range r.Tokens {
 			for _, frag := range token.Ranges {
 				repair := frag.Repair(r, keyspace, callback)
-				repairs = append(repairs, repair)
+				repairs = append(repairs, &repair)
 			}
 		}
 		return repairs, nil
@@ -148,9 +150,25 @@ func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
 	return repair
 }
 
-// Run repair in cluster
-func (r Repair) Run() error {
+// Duration measure time of fragment's repair
+func (r *Repair) Duration() time.Duration {
+	duration := r.T2.Sub(r.T1)
+	return duration
+}
 
+// StartMeasure fixes start time of Request
+func (r *Repair) StartMeasure() {
+	r.T1 = time.Now()
+}
+
+// StopMeasure fixes end time of Request
+func (r *Repair) StopMeasure() {
+	r.T2 = time.Now()
+}
+
+// Run repair in cluster
+func (r *Repair) Run() error {
+	r.StartMeasure()
 	url := fmt.Sprintf("http://%s:%d/repair/%d", r.host, r.port, r.cluster)
 
 	buf, err := json.Marshal(r)
@@ -161,10 +179,4 @@ func (r Repair) Run() error {
 		err = json.Unmarshal(response, &r)
 	}
 	return err
-}
-
-// ThenSleep sets interval of rescheduling
-func (r Repair) ThenSleep(duration time.Duration) repair.Runner {
-	r.duration = duration
-	return r
 }

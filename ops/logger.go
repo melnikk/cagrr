@@ -24,8 +24,8 @@ type logger struct {
 	fields map[string]interface{}
 }
 
-// CreateLogger cretes an implementation of Logger
-func CreateLogger(verb, index, app string) Logger {
+// NewLogger cretes an implementation of Logger
+func NewLogger(verb, index, app string) Logger {
 	level, _ := logrus.ParseLevel(verb)
 	logrus.SetLevel(level)
 
