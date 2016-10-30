@@ -15,8 +15,14 @@ import (
 type Server interface {
 	At(address string) Server
 	Using(registrator Registrator) Server
+	WithCompleter(Completer) Server
 	Through(in chan Status, out chan Status) Server
 	Serve()
+}
+
+// Completer compeltes repair of fragment
+type Completer interface {
+	CompleteRepair(cagrr.Repair) (int32, int32, int32)
 }
 
 // Obtainer gets info about fragment
@@ -39,6 +45,7 @@ type serverMux struct {
 	address     string
 	mux         *http.ServeMux
 	registrator Registrator
+	completer   Completer
 	fails       chan Status
 	wins        chan Status
 }
@@ -84,7 +91,6 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 	var fail error
 	err := json.Unmarshal(body, &status)
 	if err == nil {
-		status.Repair.StopMeasure()
 		status, fail = s.CheckStatus(status)
 
 		if fail == nil {
@@ -99,8 +105,18 @@ func (s serverMux) RegisterStatus(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (s serverMux) WithCompleter(c Completer) Server {
+	s.completer = c
+	return s
+}
+
 // CheckStatus of repair
 func (s serverMux) CheckStatus(status Status) (Status, error) {
+	if status.Type == "COMPLETE" {
+		count, completed, percent := s.completer.CompleteRepair(status.Repair)
+		log.Info(fmt.Sprintf("Fragment completed: [ %d / %d ] = %d%%", count, completed, percent))
+	}
+
 	//status.Percent = 100
 	return status, nil
 }

@@ -80,12 +80,11 @@ func (s scheduler) ScheduleCluster(cid int, cluster cagrr.ClusterConfig) {
 		fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
 		if err == nil {
 			for _, frag := range fragments {
-
-				reg.Limit()
-				frag.StartMeasure()
-
-				log.WithFields(frag).Debug("Fragment planning")
-				s.schedule <- frag
+				if frag != nil {
+					reg.Limit()
+					log.WithFields(frag).Debug("Fragment planning")
+					s.schedule <- frag
+				}
 			}
 		} else {
 			log.WithError(err).Error("Ring obtain error")
@@ -114,7 +113,7 @@ func (s scheduler) Forever() {
 			s.jobs <- &fail.Repair
 		default:
 			log.Debug("no activity")
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 15)
 		}
 	}
 }

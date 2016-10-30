@@ -24,11 +24,11 @@ var (
 func CreateFixer(logger ops.Logger) Fixer {
 	log = logger
 	fixerImp := fixer{}
-	result := Fixer(fixerImp)
+	result := Fixer(&fixerImp)
 	return result
 }
 
-func (f fixer) Fix(jobs <-chan Runner) {
+func (f *fixer) Fix(jobs <-chan Runner) {
 	log.Debug("Starting fix loop")
 	for job := range jobs {
 		err := job.Run()

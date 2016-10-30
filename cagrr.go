@@ -6,20 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/skbkontur/cagrr/repair"
 )
-
-const (
-	numFields = 8
-)
-
-type int64arr []int64
-
-func (a int64arr) Len() int           { return len(a) }
-func (a int64arr) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a int64arr) Less(i, j int) bool { return a[i] < a[j] }
 
 // Fixer repairs cluster
 type Fixer interface {
@@ -47,6 +38,8 @@ type Ring struct {
 	Name        string  `json:"name"`
 	Partitioner string  `json:"partitioner"`
 	Tokens      []Token `json:"tokens"`
+	count       int32
+	completed   int32
 }
 
 // Token represents primary key range
@@ -57,6 +50,7 @@ type Token struct {
 
 // Fragment of Token range for repair
 type Fragment struct {
+	ring     *Ring
 	ID       int    `json:"id"`
 	Endpoint string `json:"endpoint"`
 	Start    string `json:"start"`
@@ -91,7 +85,7 @@ type RepairStatus struct {
 }
 
 // Get the Ring
-func (r Ring) get() (Ring, error) {
+func (r *Ring) Get() (*Ring, error) {
 	url := fmt.Sprintf("http://%s:%d/ring/%d", r.Host, r.Port, r.Cluster)
 	res, err := http.Get(url)
 	if err == nil {
@@ -102,42 +96,69 @@ func (r Ring) get() (Ring, error) {
 }
 
 // Obtain ring
-func (r Ring) Obtain(keyspace, callback string, cluster int) ([]repair.Runner, error) {
+func (r *Ring) Obtain(keyspace, callback string, cluster int) ([]repair.Runner, error) {
 	r.Cluster = cluster
-	result, err := r.Repair(keyspace, callback)
-	return result, err
-}
+	var result []repair.Runner
 
-// Repair ring
-func (r Ring) Repair(keyspace string, callback string) ([]repair.Runner, error) {
-	count := r.Count()
-	repairs := make([]repair.Runner, count)
-	r, err := r.get()
+	r, err := r.Get()
 	if err == nil {
-		for _, token := range r.Tokens {
-			for _, frag := range token.Ranges {
-				repair := frag.Repair(r, keyspace, callback)
-				repairs = append(repairs, &repair)
-			}
-		}
-		return repairs, nil
+		result, err = r.Repair(keyspace, callback)
+		return result, err
 	}
 	return nil, err
 }
 
-// Count fragments of ring
-func (r Ring) Count() int {
-	count := 0
+// Repair ring
+func (r *Ring) Repair(keyspace string, callback string) ([]repair.Runner, error) {
+	r.completed = 0
+	r.count = r.Count()
+	repairs := make([]repair.Runner, r.count)
 	for _, token := range r.Tokens {
-		for range token.Ranges {
-			count++
+		for _, frag := range token.Ranges {
+			frag.ring = r
+			repair := frag.Repair(r, keyspace, callback)
+			repairs = append(repairs, &repair)
 		}
 	}
-	return count
+	return repairs, nil
+}
+
+// Count fragments of ring
+func (r *Ring) Count() int32 {
+	atomic.StoreInt32(&r.count, 0)
+	for _, token := range r.Tokens {
+		atomic.AddInt32(&r.count, int32(len(token.Ranges)))
+	}
+	return r.count
+}
+
+// CompleteRepair updates repair statistics of Ring
+func (r *Ring) CompleteRepair(repair Repair) (int32, int32, int32) {
+	repair.Complete()
+	completed := atomic.AddInt32(&r.completed, 1)
+	count := atomic.LoadInt32(&r.count)
+	percent := r.Percent()
+	return count, completed, percent
+}
+
+// Percent calculates percent of current repair
+func (r *Ring) Percent() int32 {
+	count := atomic.LoadInt32(&r.count)
+	complete := atomic.LoadInt32(&r.completed)
+	percent := 0
+	if count > 0 {
+		return complete * 100 / count
+	}
+	return int32(percent)
+}
+
+// Percent calculates percent of current repair
+func (f Fragment) Percent() int32 {
+	return f.ring.Percent()
 }
 
 // Repair fragment
-func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
+func (f Fragment) Repair(r *Ring, keyspace string, callback string) Repair {
 	repair := Repair{
 		Fragment: f,
 		host:     r.Host,
@@ -148,6 +169,11 @@ func (f Fragment) Repair(r Ring, keyspace string, callback string) Repair {
 	}
 
 	return repair
+}
+
+// Complete repair of fragment
+func (r *Repair) Complete() {
+	r.StopMeasure()
 }
 
 // Duration measure time of fragment's repair
@@ -164,6 +190,11 @@ func (r *Repair) StartMeasure() {
 // StopMeasure fixes end time of Request
 func (r *Repair) StopMeasure() {
 	r.T2 = time.Now()
+}
+
+// Percent returns percent of fragment
+func (r *Repair) Percent() int32 {
+	return r.Fragment.Percent()
 }
 
 // Run repair in cluster

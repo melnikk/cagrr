@@ -21,7 +21,7 @@ var _ = Describe("Ring", func() {
 	})
 
 	It("can be created from JSON", func() {
-		Expect(r).To(MatchAllFields(
+		Expect(r).To(MatchFields(IgnoreExtras,
 			Fields{
 				"Host":        Equal("localhost"),
 				"Port":        BeNumerically("==", 8080),

@@ -21,7 +21,7 @@ var opts struct {
 	Port       int    `short:"p" long:"port" default:"8080" description:"CAJRR port" env:"CAJRR_PORT"`
 	Index      string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch" env:"REPAIR_INDEX"`
 	App        string `short:"a" long:"app" default:"cagrr" description:"repair process cause app" env:"REPAIR_CAUSE"`
-	Workers    int    `short:"w" long:"workers" default:"4" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
+	Workers    int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers" env:"REPAIR_WORKERS"`
 	Duration   string `short:"d" long:"duration" default:"1w" description:"Interval of full-repair" env:"REPAIR_INTERVAL"`
 	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug" env:"REPAIR_VERBOSITY"`
 	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks" env:"CALLBACK_LISTEN"`
@@ -75,7 +75,10 @@ func main() {
 		Fix(jobs)
 
 	for win := range wins {
-		regulator.LimitRateTo(win.Repair.Duration())
+		duration := win.Repair.Duration()
+		if duration > 0 {
+			regulator.LimitRateTo(duration)
+		}
 		reporter.Report(win)
 	}
 }
@@ -92,16 +95,17 @@ func init() {
 		logger.WithError(err).Error("Error when reading configuration")
 	}
 
-	regulator = ops.NewRegulator(logger, 5)
-	server = http.CreateServer(logger)
-	scheduler = schedule.NewScheduler(logger, regulator)
-	fixer = repair.CreateFixer(logger)
-	reporter = report.CreateReporter(logger)
 	ring := cagrr.Ring{
 		Host: opts.Host,
 		Port: opts.Port,
 	}
-	obtainer = http.Obtainer(ring)
+	regulator = ops.NewRegulator(logger, 5)
+	server = http.CreateServer(logger).WithCompleter(&ring)
+
+	scheduler = schedule.NewScheduler(logger, regulator)
+	fixer = repair.CreateFixer(logger)
+	reporter = report.CreateReporter(logger)
+	obtainer = http.Obtainer(&ring)
 
 }
 
