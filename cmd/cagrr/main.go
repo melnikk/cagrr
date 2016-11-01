@@ -61,6 +61,7 @@ func main() {
 	go server.
 		At(opts.Callback).
 		Through(wins, fails).
+		LimitRateWith(regulator).
 		Serve()
 
 	go scheduler.
@@ -75,10 +76,6 @@ func main() {
 		Fix(jobs)
 
 	for win := range wins {
-		duration := win.Repair.Duration()
-		if duration > 0 {
-			regulator.LimitRateTo(duration)
-		}
 		reporter.Report(win)
 	}
 }

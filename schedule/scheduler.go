@@ -65,29 +65,30 @@ func (s scheduler) ScheduleFor(interval string) Scheduler {
 
 	s.duration, _ = time.ParseDuration(interval)
 
-	for cid, cluster := range s.Clusters {
-		log.WithFields(cluster).Debug("Starting schedule cluster")
-		go s.ScheduleCluster(cid, cluster)
-	}
+	go s.scheduleAll()
 	return s
 }
 
-func (s scheduler) ScheduleCluster(cid int, cluster cagrr.ClusterConfig) {
+func (s scheduler) scheduleAll() {
 	callback := fmt.Sprintf("http://%s/status", s.Callback)
 	for {
-		for _, keyspace := range cluster.Keyspaces {
-			log.Debug(fmt.Sprintf("Starting schedule keyspace: %s", keyspace))
-			fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
-			if err == nil {
-				for _, frag := range fragments {
-					if frag != nil {
-						reg.Limit()
-						log.WithFields(frag).Debug("Fragment planning")
-						s.schedule <- frag
+		for cid, cluster := range s.Clusters {
+			log.WithFields(cluster).Debug("Starting schedule cluster")
+
+			for _, keyspace := range cluster.Keyspaces {
+				log.Debug(fmt.Sprintf("Starting schedule keyspace: %s", keyspace))
+				fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
+				if err == nil {
+					for _, frag := range fragments {
+						if frag != nil {
+							reg.Limit()
+							log.WithFields(frag).Debug("Fragment planning")
+							s.schedule <- frag
+						}
 					}
+				} else {
+					log.WithError(err).Error("Ring obtain error")
 				}
-			} else {
-				log.WithError(err).Error("Ring obtain error")
 			}
 		}
 		time.Sleep(s.duration)

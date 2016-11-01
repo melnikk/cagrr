@@ -24,8 +24,7 @@ type Config struct {
 
 // ClusterConfig contains configuration of cluster item
 type ClusterConfig struct {
-	Host      string   `yaml:"host"`
-	Port      int      `yaml:"port"`
+	Name      string   `yaml:"name"`
 	Interval  string   `yaml:"interval"`
 	Keyspaces []string `yaml:"keyspaces"`
 }
@@ -133,7 +132,7 @@ func (r *Ring) Count() int32 {
 }
 
 // CompleteRepair updates repair statistics of Ring
-func (r *Ring) CompleteRepair(repair Repair) (int32, int32, int32) {
+func (r *Ring) CompleteRepair(repair *Repair) (int32, int32, int32) {
 	repair.Complete()
 	completed := atomic.AddInt32(&r.completed, 1)
 	count := atomic.LoadInt32(&r.count)
