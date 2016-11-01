@@ -52,6 +52,7 @@ rpm:
 		--name "cagrr" \
 		--version "$(VERSION)" \
 		--iteration "$(RELEASE)" \
+		--after-install "./pkg/postinst" \
 		-p build \
 		build/cagrr-$(VERSION)-$(RELEASE).tar.gz
 
@@ -65,6 +66,7 @@ deb:
 		--name "cagrr" \
 		--version "$(VERSION)" \
 		--iteration "$(RELEASE)" \
+		--after-install "./pkg/postinst" \
 		-p build \
 		build/cagrr-$(VERSION)-$(RELEASE).tar.gz
 
