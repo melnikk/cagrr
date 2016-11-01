@@ -37,10 +37,10 @@
 			"revisionTime": "2016-09-03T11:31:22Z"
 		},
 		{
-			"checksumSHA1": "kotiCfcngRXMM44JLwdAz+n3INQ=",
+			"checksumSHA1": "yjrIQ8WsFSwYaMXmJuGJulbHl1U=",
 			"path": "github.com/melnikk/logrus-rabbitmq-hook",
-			"revision": "584f44479ff7344092baeb5310d8a2d667938025",
-			"revisionTime": "2016-09-28T11:57:47Z"
+			"revision": "2fc3a665f0e0d7ffa846a4a45d63a3cb82da0dad",
+			"revisionTime": "2016-10-13T08:25:54Z"
 		},
 		{
 			"checksumSHA1": "ynJSWoF6v+3zMnh9R0QmmG6iGV8=",
