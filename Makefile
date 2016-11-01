@@ -33,7 +33,13 @@ run:
 
 tar:
 	mkdir -p build/root/usr/local/bin
+	mkdir -p build/root/usr/lib/systemd/system
+	mkdir -p build/root/etc/cagrr
+
 	mv build/cagrr build/root/usr/local/bin/
+	cp pkg/cagrr.service build/root/usr/lib/systemd/system/cagrr.service
+	cp pkg/config.yml build/root/etc/cagrr/config.yml
+
 	tar -czvPf build/cagrr-$(VERSION)-$(RELEASE).tar.gz -C build/root  .
 
 rpm:

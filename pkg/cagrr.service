@@ -1,5 +1,5 @@
 [Unit]
-Description=ELK streams
+Description=cassandra repair scheduler
 After=network-online.target
 
 [Service]
@@ -9,7 +9,7 @@ ExecStart=/usr/bin/cagrr -config=/etc/cagrr/config.yml
 TimeoutStopSec=60
 StandardOutput=journal
 StandardError=journal
-Restart=always
+Restart=on-failure
 LimitMEMLOCK=infinity
 LimitNOFILE=49152
 
