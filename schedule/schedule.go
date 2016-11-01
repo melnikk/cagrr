@@ -32,7 +32,7 @@ type scheduler struct {
 	jobs     chan<- repair.Runner
 	Obtainer http.Obtainer
 	Callback string
-	Duration time.Duration
+	duration time.Duration
 	Clusters []cagrr.ClusterConfig
 }
 
@@ -63,9 +63,8 @@ func (s scheduler) ReturnTo(callback string) Scheduler {
 func (s scheduler) ScheduleFor(interval string) Scheduler {
 	log.Debug("Init schedule loop")
 
-	duration, _ := time.ParseDuration(interval)
-	s.Duration = duration
-	// when RepairStatus arrives then put in Reschedule Queue
+	s.duration, _ = time.ParseDuration(interval)
+
 	for cid, cluster := range s.Clusters {
 		log.WithFields(cluster).Debug("Starting schedule cluster")
 		go s.ScheduleCluster(cid, cluster)
@@ -75,20 +74,23 @@ func (s scheduler) ScheduleFor(interval string) Scheduler {
 
 func (s scheduler) ScheduleCluster(cid int, cluster cagrr.ClusterConfig) {
 	callback := fmt.Sprintf("http://%s/status", s.Callback)
-	for _, keyspace := range cluster.Keyspaces {
-		log.Debug(fmt.Sprintf("Starting schedule keyspace: %s", keyspace))
-		fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
-		if err == nil {
-			for _, frag := range fragments {
-				if frag != nil {
-					reg.Limit()
-					log.WithFields(frag).Debug("Fragment planning")
-					s.schedule <- frag
+	for {
+		for _, keyspace := range cluster.Keyspaces {
+			log.Debug(fmt.Sprintf("Starting schedule keyspace: %s", keyspace))
+			fragments, err := s.Obtainer.Obtain(keyspace, callback, cid)
+			if err == nil {
+				for _, frag := range fragments {
+					if frag != nil {
+						reg.Limit()
+						log.WithFields(frag).Debug("Fragment planning")
+						s.schedule <- frag
+					}
 				}
+			} else {
+				log.WithError(err).Error("Ring obtain error")
 			}
-		} else {
-			log.WithError(err).Error("Ring obtain error")
 		}
+		time.Sleep(s.duration)
 	}
 }
 
