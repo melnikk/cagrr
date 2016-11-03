@@ -22,7 +22,7 @@ var opts struct {
 	Index      string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch"`
 	App        string `short:"a" long:"app" default:"cagrr" description:"repair process cause app"`
 	Workers    int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers"`
-	Duration   string `short:"d" long:"duration" default:"1w" description:"Interval of full-repair"`
+	Duration   string `short:"d" long:"duration" default:"160h" description:"Interval between repairs"`
 	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug"`
 	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks"`
 	ConfigFile string `long:"config" default:"/etc/cagrr/config.yml" description:"Configuration file name"`

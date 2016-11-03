@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/skbkontur/cagrr"
@@ -61,10 +62,14 @@ func (s scheduler) ReturnTo(callback string) Scheduler {
 }
 
 func (s scheduler) ScheduleFor(interval string) Scheduler {
-	log.Debug("Init schedule loop")
+	log.Debug(fmt.Sprintf("Init schedule loop (duration: %s)", interval))
 
-	s.duration, _ = time.ParseDuration(interval)
-
+	duration, err := time.ParseDuration(interval)
+	if err != nil {
+		log.WithError(err).Error("Cannot parse schedule interval")
+		os.Exit(1)
+	}
+	s.duration = duration
 	go s.scheduleAll()
 	return s
 }
@@ -83,7 +88,7 @@ func (s scheduler) scheduleAll() {
 						if frag != nil {
 							reg.Limit()
 							log.WithFields(frag).Debug("Fragment planning")
-							s.schedule <- frag
+							//s.schedule <- frag
 						}
 					}
 				} else {
@@ -91,6 +96,7 @@ func (s scheduler) scheduleAll() {
 				}
 			}
 		}
+		log.Info(fmt.Sprintf("Sleeping before new repair (%s)", s.duration))
 		time.Sleep(s.duration)
 	}
 }
@@ -116,7 +122,7 @@ func (s scheduler) Forever() {
 			s.jobs <- &fail.Repair
 		default:
 			log.Debug("no activity")
-			time.Sleep(time.Second * 15)
+			time.Sleep(time.Minute * 15)
 		}
 	}
 }
