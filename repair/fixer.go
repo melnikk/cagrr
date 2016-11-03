@@ -7,12 +7,6 @@ type Fixer interface {
 	Fix(jobs <-chan Runner)
 }
 
-// Runner starts fragment repair
-type Runner interface {
-	Run() error
-	ops.Meter
-}
-
 type fixer struct {
 }
 
