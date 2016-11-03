@@ -37,6 +37,7 @@ type Ring struct {
 	Name        string  `json:"name"`
 	Partitioner string  `json:"partitioner"`
 	Tokens      []Token `json:"tokens"`
+	started     time.Time
 	count       int32
 	completed   int32
 }
@@ -109,6 +110,7 @@ func (r *Ring) Obtain(keyspace, callback string, cluster int) ([]repair.Runner, 
 
 // Repair ring
 func (r *Ring) Repair(keyspace string, callback string) ([]repair.Runner, error) {
+	r.started = time.Now()
 	r.completed = 0
 	r.count = r.Count()
 	repairs := make([]repair.Runner, r.count)
@@ -132,12 +134,27 @@ func (r *Ring) Count() int32 {
 }
 
 // CompleteRepair updates repair statistics of Ring
-func (r *Ring) CompleteRepair(repair *Repair) (int32, int32, int32) {
+func (r *Ring) CompleteRepair(repair *Repair) (int32, int32, int32, time.Duration) {
 	repair.Complete()
 	completed := atomic.AddInt32(&r.completed, 1)
 	count := atomic.LoadInt32(&r.count)
 	percent := r.Percent()
-	return count, completed, percent
+	estimate := r.Estimate(count, completed)
+	return count, completed, percent, estimate
+}
+
+// Estimate calculates repair completion time
+func (r *Ring) Estimate(count, completed int32) time.Duration {
+	fragmentLeft := float32(count) - float32(completed)
+
+	worktime := time.Now().Sub(r.started)
+	timeLeft := float32(0)
+
+	if completed > 0 {
+		timeLeft = float32(worktime) * fragmentLeft / float32(completed)
+	}
+
+	return time.Duration(timeLeft)
 }
 
 // Percent calculates percent of current repair

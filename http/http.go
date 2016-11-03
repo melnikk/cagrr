@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/ops"
@@ -24,7 +25,7 @@ type Server interface {
 
 // Completer compeltes repair of fragment
 type Completer interface {
-	CompleteRepair(*cagrr.Repair) (int32, int32, int32)
+	CompleteRepair(*cagrr.Repair) (int32, int32, int32, time.Duration)
 }
 
 // Obtainer gets info about fragment
@@ -122,8 +123,8 @@ func (s serverMux) CheckStatus(status Status) (Status, error) {
 	var err error
 	switch status.Type {
 	case "COMPLETE":
-		count, completed, percent := s.completer.CompleteRepair(&status.Repair)
-		log.Info(fmt.Sprintf("Fragment completed: [ %d / %d ] = %d%%", count, completed, percent))
+		count, completed, percent, estimate := s.completer.CompleteRepair(&status.Repair)
+		log.Info(fmt.Sprintf("Fragment completed: [ %d / %d ] = %d%% (estimate: %s)", count, completed, percent, estimate))
 
 		duration := status.Repair.Duration()
 		s.regulator.LimitRateTo(duration)

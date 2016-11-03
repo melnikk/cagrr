@@ -88,7 +88,7 @@ func (s scheduler) scheduleAll() {
 						if frag != nil {
 							reg.Limit()
 							log.WithFields(frag).Debug("Fragment planning")
-							//s.schedule <- frag
+							s.schedule <- frag
 						}
 					}
 				} else {
@@ -122,7 +122,7 @@ func (s scheduler) Forever() {
 			s.jobs <- &fail.Repair
 		default:
 			log.Debug("no activity")
-			time.Sleep(time.Minute * 15)
+			time.Sleep(time.Second * 15)
 		}
 	}
 }
