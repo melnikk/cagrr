@@ -5,7 +5,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/fatih/structs"
-	"github.com/melnikk/logrus-rabbitmq-hook"
 )
 
 // Logger logs messages
@@ -25,14 +24,16 @@ type logger struct {
 }
 
 // NewLogger cretes an implementation of Logger
-func NewLogger(verb, index, app string) Logger {
+func NewLogger(verb, filename string) Logger {
 	level, _ := logrus.ParseLevel(verb)
 	logrus.SetLevel(level)
-
-	url := os.Getenv("LOG_STREAM_URL")
-	if url != "" {
-		hook := hook.New(index, url, app, app)
-		logrus.AddHook(hook)
+	if filename != "stdout" && filename != "" {
+		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
+		if err != nil {
+			logrus.Panicf("Cannot open log file: %s", filename)
+		}
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+		logrus.SetOutput(f)
 	}
 
 	log := logger{}

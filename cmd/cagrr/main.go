@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	nethttp "net/http"
+	_ "net/http/pprof"
+
 	"github.com/jessevdk/go-flags"
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/config"
@@ -19,15 +22,18 @@ var version = "devel"
 var opts struct {
 	Host       string `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service"`
 	Port       int    `short:"p" long:"port" default:"8080" description:"CAJRR port"`
-	Index      string `short:"i" long:"index" default:"cagrr-*" description:"Index in Elasticsearch"`
-	App        string `short:"a" long:"app" default:"cagrr" description:"repair process cause app"`
-	Workers    int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers"`
+	Workers    int    `short:"w" long:"workers" default:"4" description:"Number of concurrent workers"`
 	Duration   string `short:"d" long:"duration" default:"160h" description:"Interval between repairs"`
 	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug"`
 	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks"`
+	LogFile    string `short:"l" long:"log" default:"stdout" description:"Log file name"`
 	ConfigFile string `long:"config" default:"/etc/cagrr/config.yml" description:"Configuration file name"`
 	Version    bool   `long:"version" description:"Show version info and exit"`
 }
+
+const (
+	bufferLength = 5
+)
 
 // in/out streams
 var (
@@ -83,8 +89,11 @@ func main() {
 func init() {
 	flags.Parse(&opts)
 	checkVersion()
-	// pinfold
-	logger = ops.NewLogger(opts.Verbosity, opts.Index, opts.App)
+
+	logger = ops.NewLogger(opts.Verbosity, opts.LogFile)
+	if opts.Verbosity == "debug" {
+		go startProfiling()
+	}
 
 	var err error
 	configuration, err = config.CreateReader().Read(opts.ConfigFile)
@@ -96,7 +105,7 @@ func init() {
 		Host: opts.Host,
 		Port: opts.Port,
 	}
-	regulator = ops.NewRegulator(logger, 5)
+	regulator = ops.NewRegulator(logger, bufferLength)
 	server = http.CreateServer(logger).WithCompleter(&ring)
 
 	scheduler = schedule.NewScheduler(logger, regulator)
@@ -104,6 +113,10 @@ func init() {
 	reporter = report.CreateReporter(logger)
 	obtainer = http.Obtainer(&ring)
 
+}
+
+func startProfiling() {
+	logger.Info(nethttp.ListenAndServe("localhost:6060", nil))
 }
 
 func checkVersion() {

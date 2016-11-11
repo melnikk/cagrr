@@ -13,12 +13,6 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
-			"checksumSHA1": "d+ViyE/5OFl6xcNz+88SAMcRlvc=",
-			"path": "github.com/assembla/cony",
-			"revision": "04133b0c781f8f2fcdd78402910a05f1d00b1040",
-			"revisionTime": "2016-06-09T09:12:25Z"
-		},
-		{
 			"checksumSHA1": "iUzC0HRLcL0Iv8FzWzVySRdiCVA=",
 			"path": "github.com/boltdb/bolt",
 			"revision": "074dffcc83e9f421e261526d297cd93f22a34080",
@@ -35,12 +29,6 @@
 			"path": "github.com/jessevdk/go-flags",
 			"revision": "4cc2832a6e6d1d3b815e2b9d544b2a4dfb3ce8fa",
 			"revisionTime": "2016-09-03T11:31:22Z"
-		},
-		{
-			"checksumSHA1": "yjrIQ8WsFSwYaMXmJuGJulbHl1U=",
-			"path": "github.com/melnikk/logrus-rabbitmq-hook",
-			"revision": "2fc3a665f0e0d7ffa846a4a45d63a3cb82da0dad",
-			"revisionTime": "2016-10-13T08:25:54Z"
 		},
 		{
 			"checksumSHA1": "ynJSWoF6v+3zMnh9R0QmmG6iGV8=",
