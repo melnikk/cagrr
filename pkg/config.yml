@@ -1,6 +1,11 @@
 ---
+host: localhost
+port: 8080
 clusters:
   - name: Test cluster
     interval: 1w
     keyspaces:
-      - testspace
+      - name: testspace
+        tables:
+          - name: testtable
+            slices: 10

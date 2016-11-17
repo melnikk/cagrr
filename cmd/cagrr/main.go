@@ -10,11 +10,10 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/skbkontur/cagrr"
 	"github.com/skbkontur/cagrr/config"
+	"github.com/skbkontur/cagrr/db"
 	"github.com/skbkontur/cagrr/http"
 	"github.com/skbkontur/cagrr/ops"
 	"github.com/skbkontur/cagrr/repair"
-	"github.com/skbkontur/cagrr/report"
-	"github.com/skbkontur/cagrr/schedule"
 )
 
 var version = "devel"
@@ -22,7 +21,7 @@ var version = "devel"
 var opts struct {
 	Host       string `short:"h" long:"host" default:"localhost" description:"Address of CAJRR service"`
 	Port       int    `short:"p" long:"port" default:"8080" description:"CAJRR port"`
-	Workers    int    `short:"w" long:"workers" default:"4" description:"Number of concurrent workers"`
+	Workers    int    `short:"w" long:"workers" default:"1" description:"Number of concurrent workers"`
 	Duration   string `short:"d" long:"duration" default:"160h" description:"Interval between repairs"`
 	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug"`
 	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks"`
@@ -51,39 +50,36 @@ var (
 
 // subject dependencies
 var (
-	fixer       repair.Fixer
-	registrator http.Registrator
-	obtainer    http.Obtainer
-	server      http.Server
-	scheduler   schedule.Scheduler
-	reporter    report.Reporter
+	database db.DB
+	fixer    repair.Fixer
+	obtainer repair.Obtainer
+	server   http.Server
 )
 
 func main() {
-	jobs := make(chan repair.Runner, opts.Workers)
-	wins := make(chan http.Status, opts.Workers)
-	fails := make(chan http.Status, opts.Workers)
+	done := make(chan bool)
+	sig := make(chan os.Signal, 1)
+
+	defer database.Close()
 
 	go server.
 		At(opts.Callback).
-		Through(wins, fails).
-		LimitRateWith(regulator).
 		Serve()
 
-	go scheduler.
-		OnClusters(configuration.Clusters).
-		Using(obtainer).
-		ReturnTo(opts.Callback).
-		ScheduleFor(opts.Duration).
-		Reschedule(fails).To(jobs).
-		Forever()
-
-	go fixer.
-		Fix(jobs)
-
-	for win := range wins {
-		reporter.Report(win)
+	for cid, cluster := range configuration.Clusters {
+		cluster.ID = cid
+		go func(cluster cagrr.ClusterConfig) {
+			scheduler := repair.NewScheduler(regulator)
+			scheduler.
+				Using(obtainer).
+				SaveTo(database).
+				ReturnTo(opts.Callback).
+				SetInterval(opts.Duration).
+				OnCluster(cluster).
+				Until(done, sig)
+		}(cluster)
 	}
+	<-sig
 }
 
 func init() {
@@ -101,18 +97,15 @@ func init() {
 		logger.WithError(err).Error("Error when reading configuration")
 	}
 
-	ring := cagrr.Ring{
-		Host: opts.Host,
-		Port: opts.Port,
-	}
-	regulator = ops.NewRegulator(logger, bufferLength)
-	server = http.CreateServer(logger).WithCompleter(&ring)
+	regulator = ops.NewRegulator(bufferLength)
+	repair.SetLogger(logger)
+	repair.SetRegulator(regulator)
 
-	scheduler = schedule.NewScheduler(logger, regulator)
-	fixer = repair.CreateFixer(logger)
-	reporter = report.CreateReporter(logger)
-	obtainer = http.Obtainer(&ring)
+	server = http.CreateServer(logger)
 
+	obtainer = repair.NewObtainer(configuration.Host, configuration.Port)
+
+	database = db.NewDb("cagrr.db")
 }
 
 func startProfiling() {

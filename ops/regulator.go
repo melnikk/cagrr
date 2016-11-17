@@ -95,7 +95,6 @@ type Regulator interface {
 }
 
 type regulator struct {
-	log       Logger
 	queue     *Queue
 	counter   int
 	threshold int
@@ -106,9 +105,8 @@ type regulator struct {
 }
 
 // NewRegulator initializes new stability service object
-func NewRegulator(logger Logger, size int) Regulator {
+func NewRegulator(size int) Regulator {
 	result := regulator{
-		log:   logger,
 		queue: NewQueue(size),
 	}
 	return &result
@@ -130,7 +128,7 @@ func (r *regulator) PassExecution(handler Cirquit) error {
 
 // Limit sleeps for measured rate
 func (r *regulator) Limit() {
-	r.log.Debug(fmt.Sprintf("Rate limited to %s", r.rate))
+	log.Debug(fmt.Sprintf("Rate limited to %s", r.rate))
 	time.Sleep(r.rate)
 }
 
@@ -138,7 +136,7 @@ func (r *regulator) LimitRateTo(duration time.Duration) Regulator {
 	r.queue.Pop()
 	r.queue.Push(&Node{duration})
 	r.rate = r.queue.Average()
-	r.log.Debug(fmt.Sprintf("Duration received: [%s, %s]", duration, r.rate))
+	log.Debug(fmt.Sprintf("Duration received: [%s, %s]", duration, r.rate))
 	return r
 }
 

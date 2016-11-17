@@ -7,6 +7,10 @@ import (
 	"github.com/fatih/structs"
 )
 
+var (
+	log Logger
+)
+
 // Logger logs messages
 type Logger interface {
 	WithError(err error) Logger
@@ -36,7 +40,7 @@ func NewLogger(verb, filename string) Logger {
 		logrus.SetOutput(f)
 	}
 
-	log := logger{}
+	log = logger{}
 	return log
 }
 

@@ -10,11 +10,11 @@ import (
 
 var _ = Describe("Ring", func() {
 	var (
-		r Ring
+		r Config
 	)
 
 	BeforeEach(func() {
-		r = Ring{
+		r = Config{
 			Host: "localhost",
 			Port: 8080,
 		}
@@ -23,12 +23,8 @@ var _ = Describe("Ring", func() {
 	It("can be created from JSON", func() {
 		Expect(r).To(MatchFields(IgnoreExtras,
 			Fields{
-				"Host":        Equal("localhost"),
-				"Port":        BeNumerically("==", 8080),
-				"Cluster":     BeNumerically("==", 0),
-				"Name":        Equal(""),
-				"Partitioner": Equal(""),
-				"Tokens":      Equal([]Token(nil)),
+				"Host": Equal("localhost"),
+				"Port": BeNumerically("==", 8080),
 			}))
 	})
 })
