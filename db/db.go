@@ -1,9 +1,8 @@
 package db
 
 import (
-	"log"
-
 	"github.com/boltdb/bolt"
+	"github.com/skbkontur/cagrr/ops"
 )
 
 // Connector establish a connection to DB
@@ -33,6 +32,15 @@ type DB interface {
 }
 type boltDB struct {
 	db *bolt.DB
+}
+
+var (
+	log ops.Logger
+)
+
+// SetLogger sets package-level logger
+func SetLogger(logger ops.Logger) {
+	log = logger
 }
 
 // NewDb connects to DB

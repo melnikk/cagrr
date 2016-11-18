@@ -97,6 +97,9 @@ func init() {
 		logger.WithError(err).Error("Error when reading configuration")
 	}
 
+	db.SetLogger(logger)
+	database = db.NewDb("/tmp/cagrr.db")
+
 	regulator = ops.NewRegulator(bufferLength)
 	repair.SetLogger(logger)
 	repair.SetRegulator(regulator)
@@ -105,7 +108,6 @@ func init() {
 
 	obtainer = repair.NewObtainer(configuration.Host, configuration.Port)
 
-	database = db.NewDb("cagrr.db")
 }
 
 func startProfiling() {
