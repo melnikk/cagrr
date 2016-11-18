@@ -44,7 +44,7 @@ type Fragment struct {
 // RepairStatus keeps status of repair
 type RepairStatus struct {
 	ID       int
-	Cluster  int
+	Cluster  string
 	Keyspace string
 	Tables   string
 	Count    int

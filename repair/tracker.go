@@ -2,6 +2,7 @@ package repair
 
 import (
 	"errors"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type repairKey struct {
-	cluster  int
+	cluster  string
 	keyspace string
 	tables   string
 }
@@ -21,6 +22,9 @@ type repairStats struct {
 }
 
 type tableStats struct {
+	cluster   string
+	keyspace  string
+	tables    string
 	repairs   map[int]*repairStats
 	started   time.Time
 	total     int32
@@ -29,10 +33,13 @@ type tableStats struct {
 
 // Stats for logging
 type Stats struct {
+	Cluster   string
+	Keyspace  string
+	Tables    string
 	Total     int32
 	Completed int32
 	Percent   int32
-	Estimate  time.Duration
+	Estimate  string
 }
 
 var (
@@ -41,7 +48,7 @@ var (
 
 // TrackTable traces repair calls and progress
 func TrackTable(cluster *cagrr.ClusterConfig, keyspace *cagrr.Keyspace, tables *cagrr.Table, total, position int) {
-	table := getTrackTable(cluster.ID, keyspace.Name, tables.Name)
+	table := getTrackTable(cluster.Name, keyspace.Name, tables.Name)
 	table.started = time.Now()
 	// Dump protection
 	if total == 0 {
@@ -52,7 +59,7 @@ func TrackTable(cluster *cagrr.ClusterConfig, keyspace *cagrr.Keyspace, tables *
 }
 
 // TrackRepair traces repair calls and progress
-func TrackRepair(cluster int, keyspace, tables string, id int) {
+func TrackRepair(cluster string, keyspace, tables string, id int) {
 	table := getTrackTable(cluster, keyspace, tables)
 	table.start(id)
 }
@@ -74,12 +81,12 @@ func TrackStatus(status cagrr.RepairStatus) error {
 	return err
 }
 
-func getTrackTable(cluster int, keyspace, tables string) *tableStats {
+func getTrackTable(cluster string, keyspace, tables string) *tableStats {
 	tableKey := repairKey{cluster, keyspace, tables}
 	table, exists := tracks[tableKey]
 	if !exists {
 		statsmap := make(map[int]*repairStats)
-		table = &tableStats{statsmap, time.Now(), 0, 0}
+		table = &tableStats{cluster, keyspace, tables, statsmap, time.Now(), 0, 0}
 		tracks[tableKey] = table
 	}
 
@@ -99,7 +106,7 @@ func (t *tableStats) statistics() Stats {
 	if completed > 0 {
 		timeLeft = float32(worktime) * fragmentLeft / float32(completed)
 	}
-	return Stats{total, completed, percent, time.Duration(timeLeft)}
+	return Stats{t.cluster, t.keyspace, t.tables, total, completed, percent, fmt.Sprintf("%s", time.Duration(timeLeft))}
 }
 
 func (t *tableStats) start(id int) {

@@ -17,7 +17,7 @@ type runner struct {
 	host     string
 	port     int
 	ID       int    `json:"id"`
-	Cluster  int    `json:"cluster"`
+	Cluster  string `json:"cluster"`
 	Keyspace string `json:"keyspace"`
 	Tables   string `json:"tables"`
 	Callback string `json:"callback"`
@@ -27,7 +27,7 @@ type runner struct {
 }
 
 // NewRunner create new runner implementation
-func NewRunner(host string, port, cluster int, keyspace, callback string, id int, start, end, endpoint string) Runner {
+func NewRunner(host string, port int, cluster string, keyspace, callback string, id int, start, end, endpoint string) Runner {
 	result := runner{
 		ID:       id,
 		host:     host,
@@ -47,7 +47,7 @@ func (r *runner) Run(tables string) error {
 	r.Tables = tables
 	TrackRepair(r.Cluster, r.Keyspace, r.Tables, r.ID)
 
-	url := fmt.Sprintf("http://%s:%d/repair/%d", r.host, r.port, r.Cluster)
+	url := fmt.Sprintf("http://%s:%d/repair/%s", r.host, r.port, r.Cluster)
 
 	log.WithFields(r).Info("Starting repair job")
 

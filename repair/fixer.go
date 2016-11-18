@@ -51,7 +51,6 @@ func (f *fixer) Fix(jobs <-chan Runner) {
 		f.savePosition(n)
 	}
 	f.savePosition(0)
-	panic("wtf")
 }
 
 func (f *fixer) dbKey() string {

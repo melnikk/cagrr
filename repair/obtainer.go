@@ -11,7 +11,7 @@ import (
 
 // Obtainer gets info about fragment
 type Obtainer interface {
-	Obtain(keyspace, callback string, cluster, slices int) ([]Runner, error)
+	Obtain(keyspace, callback, cluster string, slices int) ([]Runner, error)
 }
 
 type obtainer struct {
@@ -26,7 +26,7 @@ func NewObtainer(host string, port int) Obtainer {
 }
 
 // Obtain ring
-func (o *obtainer) Obtain(keyspace, callback string, cluster, slices int) ([]Runner, error) {
+func (o *obtainer) Obtain(keyspace, callback, cluster string, slices int) ([]Runner, error) {
 	tokens, err := o.Get(cluster, keyspace, slices)
 
 	if err != nil {
@@ -57,9 +57,9 @@ func (o *obtainer) Obtain(keyspace, callback string, cluster, slices int) ([]Run
 type TokenSet []cagrr.Token
 
 // Get the Ring
-func (o *obtainer) Get(cluster int, keyspace string, slices int) (TokenSet, error) {
+func (o *obtainer) Get(cluster string, keyspace string, slices int) (TokenSet, error) {
 	var tokens TokenSet
-	url := fmt.Sprintf("http://%s:%d/ring/%d/describe/%s/%d", o.host, o.port, cluster, keyspace, slices)
+	url := fmt.Sprintf("http://%s:%d/ring/%s/describe/%s/%d", o.host, o.port, cluster, keyspace, slices)
 	res, err := http.Get(url)
 
 	if res != nil {

@@ -82,7 +82,7 @@ func (s *scheduler) scheduleAll() {
 
 			for _, cf := range keyspace.Tables {
 				log.Debug(fmt.Sprintf("Starting schedule column families: %s", cf.Name))
-				fragments, err := s.obtainer.Obtain(keyspace.Name, callback, s.cluster.ID, cf.Slices)
+				fragments, err := s.obtainer.Obtain(keyspace.Name, callback, s.cluster.Name, cf.Slices)
 				if err != nil {
 					log.WithError(err).Error("Ring obtain error")
 				}
