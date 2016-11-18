@@ -18,6 +18,7 @@ type ClusterConfig struct {
 // Keyspace contains keyspace repair schedule description
 type Keyspace struct {
 	Name   string  `yaml:"name"`
+	Slices int     `yaml:"slices"`
 	Tables []Table `yaml:"tables"`
 }
 
@@ -56,66 +57,13 @@ type RepairStatus struct {
 	Type     string
 }
 
-/*
-// CompleteRepair updates repair statistics of Ring
-func (r *Ring) CompleteRepair(repair *Repair) (int32, int32, int32, time.Duration) {
-	repair.Complete()
-	//completed := atomic.AddInt32(&r.completed, 1)
-	//count := atomic.LoadInt32(&r.count)
-	//percent := r.Percent()
-	//estimate := r.Estimate(count, completed)
-	//return count, completed, percent, estimate
-	return 0, 0, 0, 0
-}
-
-// Estimate calculates repair completion time
-func (r *Ring) Estimate(count, completed int32) time.Duration {
-	fragmentLeft := float32(count) - float32(completed)
-
-	worktime := time.Now().Sub(r.started)
-	timeLeft := float32(0)
-
-	if completed > 0 {
-		timeLeft = float32(worktime) * fragmentLeft / float32(completed)
+// ColumnFamily creates or returns existed table
+func (k Keyspace) ColumnFamily(name string) Table {
+	result := Table{name, k.Slices}
+	for _, table := range k.Tables {
+		if table.Name == name {
+			result.Slices = table.Slices
+		}
 	}
-
-	return time.Duration(timeLeft)
+	return result
 }
-
-// Percent calculates percent of current repair
-func (r *Ring) Percent() int32 {
-	//count := atomic.LoadInt32(&r.count)
-	//complete := atomic.LoadInt32(&r.completed)
-	percent := 0
-	//if count > 0 {
-	//return complete * 100 / count
-	//}
-	return int32(percent)
-}
-
-// Complete repair of fragment
-func (r *Repair) Complete() {
-	r.StopMeasure()
-}
-
-// Duration measure time of fragment's repair
-func (r *Repair) Duration() time.Duration {
-	duration := r.T2.Sub(r.T1)
-	return duration
-}
-
-// StartMeasure fixes start time of Request
-func (r *Repair) StartMeasure() {
-	r.T1 = time.Now()
-}
-
-// StopMeasure fixes end time of Request
-func (r *Repair) StopMeasure() {
-	r.T2 = time.Now()
-}
-
-// Percent returns percent of fragment
-func (r *Repair) Percent() int32 {
-	return 0
-}
-*/

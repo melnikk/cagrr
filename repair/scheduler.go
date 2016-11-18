@@ -80,12 +80,14 @@ func (s *scheduler) scheduleAll() {
 		for _, keyspace := range s.cluster.Keyspaces {
 			log.Debug(fmt.Sprintf("Starting schedule keyspace: %s", keyspace.Name))
 
-			for _, cf := range keyspace.Tables {
+			fragments, tables, err := s.obtainer.Obtain(keyspace.Name, callback, s.cluster.Name, keyspace.Slices)
+			if err != nil {
+				log.WithError(err).Error("Ring obtain error")
+			}
+
+			for _, cfName := range tables {
+				cf := keyspace.ColumnFamily(cfName)
 				log.Debug(fmt.Sprintf("Starting schedule column families: %s", cf.Name))
-				fragments, err := s.obtainer.Obtain(keyspace.Name, callback, s.cluster.Name, cf.Slices)
-				if err != nil {
-					log.WithError(err).Error("Ring obtain error")
-				}
 
 				fixer := NewFixer(s.db, &s.cluster, &keyspace, &cf, len(fragments))
 				jobs := make(chan Runner)
@@ -95,6 +97,7 @@ func (s *scheduler) scheduleAll() {
 					s.regulator.Limit()
 					jobs <- frag
 				}
+				close(jobs)
 			}
 
 		}

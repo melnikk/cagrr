@@ -11,7 +11,7 @@ import (
 
 // Obtainer gets info about fragment
 type Obtainer interface {
-	Obtain(keyspace, callback, cluster string, slices int) ([]Runner, error)
+	Obtain(keyspace, callback, cluster string, slices int) ([]Runner, []string, error)
 }
 
 type obtainer struct {
@@ -26,11 +26,12 @@ func NewObtainer(host string, port int) Obtainer {
 }
 
 // Obtain ring
-func (o *obtainer) Obtain(keyspace, callback, cluster string, slices int) ([]Runner, error) {
-	tokens, err := o.Get(cluster, keyspace, slices)
+func (o *obtainer) Obtain(keyspace, callback, cluster string, slices int) ([]Runner, []string, error) {
+	tokens, err := o.GetTokens(cluster, keyspace, slices)
+	tables, err := o.GetTables(cluster, keyspace)
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	count := len(tokens) * slices
 	repairs := make([]Runner, 0, count)
@@ -50,14 +51,14 @@ func (o *obtainer) Obtain(keyspace, callback, cluster string, slices int) ([]Run
 			repairs = append(repairs, repair)
 		}
 	}
-	return repairs, nil
+	return repairs, tables, nil
 }
 
 // TokenSet is a set of Token
 type TokenSet []cagrr.Token
 
-// Get the Ring
-func (o *obtainer) Get(cluster string, keyspace string, slices int) (TokenSet, error) {
+// Get tokens of the Ring
+func (o *obtainer) GetTokens(cluster string, keyspace string, slices int) (TokenSet, error) {
 	var tokens TokenSet
 	url := fmt.Sprintf("http://%s:%d/ring/%s/describe/%s/%d", o.host, o.port, cluster, keyspace, slices)
 	res, err := http.Get(url)
@@ -72,4 +73,21 @@ func (o *obtainer) Get(cluster string, keyspace string, slices int) (TokenSet, e
 	response, _ := ioutil.ReadAll(res.Body)
 	err = json.Unmarshal(response, &tokens)
 	return tokens, err
+}
+
+func (o *obtainer) GetTables(cluster string, keyspace string) ([]string, error) {
+	var names []string
+	url := fmt.Sprintf("http://%s:%d/tables/%s/%s", o.host, o.port, cluster, keyspace)
+	res, err := http.Get(url)
+
+	if res != nil {
+		defer res.Body.Close()
+	}
+	if err != nil {
+		log.WithError(err).Warn("Failed to obtain column families")
+	}
+
+	response, _ := ioutil.ReadAll(res.Body)
+	err = json.Unmarshal(response, &names)
+	return names, err
 }
