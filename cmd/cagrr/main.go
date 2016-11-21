@@ -68,7 +68,7 @@ func main() {
 
 	for cid, cluster := range configuration.Clusters {
 		cluster.ID = cid
-		go func(cluster cagrr.ClusterConfig) {
+		go func(cluster cagrr.Cluster) {
 			scheduler := repair.NewScheduler(regulator)
 			scheduler.
 				Using(obtainer).

@@ -2,13 +2,13 @@ package cagrr
 
 // Config is a configuration file struct
 type Config struct {
-	Host     string          `yaml:"host"`
-	Port     int             `yaml:"port"`
-	Clusters []ClusterConfig `yaml:"clusters"`
+	Host     string    `yaml:"host"`
+	Port     int       `yaml:"port"`
+	Clusters []Cluster `yaml:"clusters"`
 }
 
-// ClusterConfig contains configuration of cluster item
-type ClusterConfig struct {
+// Cluster contains configuration of cluster item
+type Cluster struct {
 	ID        int
 	Name      string     `yaml:"name"`
 	Interval  string     `yaml:"interval"`

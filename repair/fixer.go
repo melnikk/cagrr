@@ -19,14 +19,14 @@ type Fixer interface {
 
 type fixer struct {
 	database db.DB
-	cluster  *cagrr.ClusterConfig
+	cluster  *cagrr.Cluster
 	keyspace *cagrr.Keyspace
 	tables   *cagrr.Table
 	position int
 }
 
 // NewFixer creates fixer of clusters
-func NewFixer(database db.DB, cluster *cagrr.ClusterConfig, keyspace *cagrr.Keyspace, tables *cagrr.Table, total int) Fixer {
+func NewFixer(database db.DB, cluster *cagrr.Cluster, keyspace *cagrr.Keyspace, tables *cagrr.Table, total int) Fixer {
 	database.WriteValue(dbTable, "init", "bucket")
 	result := fixer{database, cluster, keyspace, tables, 0}
 	position := result.loadPosition()

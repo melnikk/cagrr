@@ -47,7 +47,7 @@ var (
 )
 
 // TrackTable traces repair calls and progress
-func TrackTable(cluster *cagrr.ClusterConfig, keyspace *cagrr.Keyspace, tables *cagrr.Table, total, position int) {
+func TrackTable(cluster *cagrr.Cluster, keyspace *cagrr.Keyspace, tables *cagrr.Table, total, position int) {
 	table := getTrackTable(cluster.Name, keyspace.Name, tables.Name)
 	table.started = time.Now()
 	// Dump protection

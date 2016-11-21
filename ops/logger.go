@@ -1,10 +1,9 @@
 package ops
 
 import (
-	"os"
-
 	"github.com/Sirupsen/logrus"
 	"github.com/fatih/structs"
+	"github.com/rifflock/lfshook"
 )
 
 var (
@@ -32,12 +31,14 @@ func NewLogger(verb, filename string) Logger {
 	level, _ := logrus.ParseLevel(verb)
 	logrus.SetLevel(level)
 	if filename != "stdout" && filename != "" {
-		f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0755)
-		if err != nil {
-			logrus.Panicf("Cannot open log file: %s", filename)
-		}
+
 		logrus.SetFormatter(&logrus.JSONFormatter{})
-		logrus.SetOutput(f)
+		logrus.AddHook(lfshook.NewHook(lfshook.PathMap{
+			logrus.InfoLevel:  filename,
+			logrus.DebugLevel: filename,
+			logrus.WarnLevel:  filename,
+			logrus.ErrorLevel: filename,
+		}))
 	}
 
 	log = logger{}
