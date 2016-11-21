@@ -44,8 +44,7 @@ var configuration config.Config
 
 // ops dependencies
 var (
-	logger    ops.Logger
-	regulator ops.Regulator
+	logger ops.Logger
 )
 
 // subject dependencies
@@ -69,13 +68,13 @@ func main() {
 	for cid, cluster := range configuration.Clusters {
 		cluster.ID = cid
 		go func(cluster cagrr.Cluster) {
-			scheduler := repair.NewScheduler(regulator)
+			regulator := ops.NewRegulator(bufferLength)
+			scheduler := repair.NewScheduler(cluster, regulator)
 			scheduler.
 				Using(obtainer).
 				SaveTo(database).
 				ReturnTo(opts.Callback).
 				SetInterval(opts.Duration).
-				OnCluster(cluster).
 				Until(done, sig)
 		}(cluster)
 	}
@@ -100,9 +99,7 @@ func init() {
 	db.SetLogger(logger)
 	database = db.NewDb("/tmp/cagrr.db")
 
-	regulator = ops.NewRegulator(bufferLength)
 	repair.SetLogger(logger)
-	repair.SetRegulator(regulator)
 
 	server = http.CreateServer(logger)
 

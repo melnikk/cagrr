@@ -18,7 +18,6 @@ type Scheduler interface {
 	ReturnTo(callback string) Scheduler
 	Reschedule(fails <-chan Runner) Scheduler
 	SetInterval(interval string) Scheduler
-	OnCluster(cluster cagrr.Cluster) Scheduler
 	SaveTo(db.DB) Scheduler
 	Until(chan bool, chan os.Signal)
 }
@@ -34,16 +33,14 @@ type scheduler struct {
 }
 
 // NewScheduler initializes loops for scheduling repair jobs
-func NewScheduler(regulator ops.Regulator) Scheduler {
+func NewScheduler(cluster cagrr.Cluster, regulator ops.Regulator) Scheduler {
 	result := scheduler{}
+	result.cluster = cluster
 	result.regulator = regulator
+	setRegulator(cluster.Name, result.regulator)
 	return &result
 }
 
-func (s *scheduler) OnCluster(cluster cagrr.Cluster) Scheduler {
-	s.cluster = cluster
-	return s
-}
 func (s *scheduler) SaveTo(database db.DB) Scheduler {
 	s.db = database
 	return s

@@ -74,6 +74,7 @@ func TrackStatus(status cagrr.RepairStatus) error {
 		stats := table.statistics()
 		log.WithFields(stats).Info("Fragment completed")
 
+		regulator := getRegulator(status.Cluster)
 		regulator.LimitRateTo(duration)
 	case "ERROR":
 		err = errors.New("Error in cajrr")
