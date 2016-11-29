@@ -21,10 +21,6 @@ var opts struct {
 	Version    bool   `long:"version" description:"Show version info and exit"`
 }
 
-const (
-	bufferLength = 5
-)
-
 // in/out streams
 var (
 	out = os.Stdout

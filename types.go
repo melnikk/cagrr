@@ -58,13 +58,13 @@ type QueueNode struct {
 
 // Repair object
 type Repair struct {
-	ID       int `json:"id"`
-	Endpoint string
-	Start    string
-	End      string
-	Cluster  string
-	Keyspace string
-	Table    string
+	ID       int    `json:"id"`
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	Endpoint string `json:"endpoint"`
+	Cluster  string `json:"cluster"`
+	Keyspace string `json:"keyspace"`
+	Table    string `json:"table"`
 	Callback string `json:"callback"`
 }
 
@@ -86,9 +86,8 @@ type RepairStats struct {
 // RepairStatus keeps status of repair
 type RepairStatus struct {
 	Repair  Repair
-	Total   int
-	Count   int
-	Error   bool
+	Command int32
+	Options string
 	Message string
 	Session string
 	Type    string

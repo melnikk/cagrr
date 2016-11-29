@@ -30,6 +30,8 @@ func (c *Connector) GetTokens(cluster, keyspace string, slices int) (TokenSet, e
 func (c *Connector) GetTables(cluster, keyspace string) ([]string, error) {
 	var names []string
 	url := fmt.Sprintf("http://%s:%d/tables/%s/%s", c.Host, c.Port, cluster, keyspace)
+	log.Debug(fmt.Sprintf("URL: %s", url))
+
 	res, err := http.Get(url)
 
 	if res != nil {

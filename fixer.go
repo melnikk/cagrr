@@ -11,9 +11,8 @@ func (f *fixer) Fix(jobs <-chan Repair) {
 	log.WithFields(f).Debug("Starting fix loop")
 	for job := range jobs {
 		err := f.runner.RunRepair(job)
-		if err == nil {
-			log.WithFields(job).Debug("Repair job started")
+		if err != nil {
+			log.WithError(err).WithFields(job).Warn("Fail to start job")
 		}
-
 	}
 }

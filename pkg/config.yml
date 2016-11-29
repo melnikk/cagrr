@@ -1,9 +1,10 @@
 ---
-host: localhost
-port: 8080
+conn:
+  host: localhost
+  port: 8080
 clusters:
   - name: Test cluster
     interval: 160h
     keyspaces:
       - name: testspace
-        slices: 10
+        slices: 1

@@ -10,22 +10,24 @@ var (
 	tracks = make(map[tableRepairKey]*tableStats)
 )
 
-// StartTableTrack inits track of table
-func StartTableTrack(cluster string, keyspace, table string, total, position int) {
+// StartTableTrack begins trace of repair
+func StartTableTrack(cluster, keyspace, table string, total int32) {
 	stats := getTrackTable(cluster, keyspace, table)
-	stats.started = time.Now()
-	// Dumb protection
-	if total == 0 {
-		total = 1
-	}
-	stats.total = int32(total)
-	stats.completed = int32(position)
+	stats.total = total
+}
+
+// FinishRepairTrack stops tracking and returns mestrics
+func FinishRepairTrack(repair Repair) (time.Duration, RepairStats) {
+	stats := getTrackTable(repair.Cluster, repair.Keyspace, repair.Table)
+	duration := stats.finish(repair.ID)
+	logStats := stats.statistics()
+	return duration, logStats
 }
 
 // StartRepairTrack begins trace of repair
-func StartRepairTrack(cluster string, keyspace, table string, id int) {
-	stats := getTrackTable(cluster, keyspace, table)
-	stats.start(id)
+func StartRepairTrack(rep Repair) {
+	stats := getTrackTable(rep.Cluster, rep.Keyspace, rep.Table)
+	stats.start(rep.ID)
 }
 
 func getTrackTable(cluster string, keyspace, table string) *tableStats {
@@ -39,6 +41,7 @@ func getTrackTable(cluster string, keyspace, table string) *tableStats {
 			table:    table,
 			repairs:  statsmap,
 			started:  time.Now(),
+			total:    1,
 		}
 		tracks[tableKey] = stats
 	}
