@@ -27,10 +27,10 @@ integration:
 
 build:
 	mkdir build
-	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
+	cd cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
 
 run:
-	go run cmd/cagrr/main.go -v debug
+	go run cagrr/main.go -v debug
 
 tar:
 	mkdir -p build/root/usr/local/bin

@@ -1,47 +1,8 @@
-package db
+package cagrr
 
 import (
 	"github.com/boltdb/bolt"
-	"github.com/skbkontur/cagrr/ops"
 )
-
-// Connector establish a connection to DB
-type Connector interface {
-}
-
-// ValueReader reads position data from DB
-type ValueReader interface {
-	ReadValue(string, string) string
-}
-
-// ValueWriter writes position to DB
-type ValueWriter interface {
-	WriteValue(string, string, string) error
-}
-
-// Closer closes DB connection
-type Closer interface {
-	Close()
-}
-
-// DB implements DB interface
-type DB interface {
-	ValueReader
-	ValueWriter
-	Closer
-}
-type boltDB struct {
-	db *bolt.DB
-}
-
-var (
-	log ops.Logger
-)
-
-// SetLogger sets package-level logger
-func SetLogger(logger ops.Logger) {
-	log = logger
-}
 
 // NewDb connects to DB
 func NewDb(name string) DB {
@@ -49,7 +10,7 @@ func NewDb(name string) DB {
 	var err error
 	instance.db, err = bolt.Open(name, 0600, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
 	return &instance
 }

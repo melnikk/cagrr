@@ -1,4 +1,4 @@
-package ops
+package cagrr
 
 import (
 	"github.com/Sirupsen/logrus"
@@ -9,22 +9,6 @@ import (
 var (
 	log Logger
 )
-
-// Logger logs messages
-type Logger interface {
-	WithError(err error) Logger
-	WithFields(str interface{}) Logger
-	Debug(message interface{}) Logger
-	Error(message interface{}) Logger
-	Fatal(message interface{}) Logger
-	Warn(message interface{}) Logger
-	Info(message interface{}) Logger
-}
-
-type logger struct {
-	err    error
-	fields map[string]interface{}
-}
 
 // NewLogger cretes an implementation of Logger
 func NewLogger(verb, filename string) Logger {

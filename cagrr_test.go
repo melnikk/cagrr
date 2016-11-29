@@ -10,11 +10,11 @@ import (
 
 var _ = Describe("Ring", func() {
 	var (
-		r Config
+		r Connector
 	)
 
 	BeforeEach(func() {
-		r = Config{
+		r = Connector{
 			Host: "localhost",
 			Port: 8080,
 		}
