@@ -13,10 +13,10 @@
 			"revisionTime": "2016-08-29T20:23:21Z"
 		},
 		{
-			"checksumSHA1": "iUzC0HRLcL0Iv8FzWzVySRdiCVA=",
+			"checksumSHA1": "5WkJo4wDea0vYGp6LFnbff16Ny0=",
 			"path": "github.com/boltdb/bolt",
-			"revision": "074dffcc83e9f421e261526d297cd93f22a34080",
-			"revisionTime": "2016-10-08T15:24:23Z"
+			"revision": "0d9f544bb94aac29c185968483459ef74d6deb5d",
+			"revisionTime": "2016-11-21T16:51:43Z"
 		},
 		{
 			"checksumSHA1": "KCWVxG+J8SxHGlGiUghe0KBGsa8=",
@@ -53,10 +53,10 @@
 			"revision": ""
 		},
 		{
-			"checksumSHA1": "Xz3hUrPvOYGWTuHrEryoYAj9zwg=",
+			"checksumSHA1": "MlTI84eWAFvqeRgXxBtjRYHk1yQ=",
 			"path": "golang.org/x/sys/unix",
-			"revision": "9bb9f0998d48b31547d975974935ae9b48c7a03c",
-			"revisionTime": "2016-10-11T23:07:22Z"
+			"revision": "30237cf4eefd639b184d1f2cb77a581ea0be8947",
+			"revisionTime": "2016-11-19T15:29:01Z"
 		},
 		{
 			"checksumSHA1": "12GqsW8PiRPnezDDy0v4brZrndM=",
