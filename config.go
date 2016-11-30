@@ -4,22 +4,19 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v1"
 )
 
 // ReadConfiguration parses yaml configuration file
-func ReadConfiguration(filename string) (Config, error) {
+func ReadConfiguration(filename string) (*Config, error) {
 	var c Config
 	filename, _ = filepath.Abs(filename)
 	yamlFile, err := ioutil.ReadFile(filename)
 
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	err = yaml.Unmarshal(yamlFile, &c)
-	if err != nil {
-		return c, err
-	}
-	return c, nil
+	return &c, err
 }
