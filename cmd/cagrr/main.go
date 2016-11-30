@@ -14,11 +14,11 @@ import (
 var version = "devel"
 
 var opts struct {
-	Verbosity  string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug"`
-	Callback   string `short:"c" long:"callback" default:"localhost:8888" description:"host:port string of listen address for repair callbacks"`
-	LogFile    string `short:"l" long:"log" default:"stdout" description:"Log file name"`
-	ConfigFile string `long:"config" default:"/etc/cagrr/config.yml" description:"Configuration file name"`
-	Version    bool   `long:"version" description:"Show version info and exit"`
+	Verbosity     string `short:"v" long:"verbosity" default:"debug" description:"Verbosity of tool, possible values are: panic, fatal, error, waring, debug"`
+	ListenAddress string `short:"a" long:"listen" default:"localhost:8888" description:"host:port string of listen address for repair callbacks"`
+	LogFile       string `short:"l" long:"log" default:"stdout" description:"Log file name"`
+	ConfigFile    string `short:"c" long:"config" default:"/etc/cagrr/config.yml" description:"Configuration file name"`
+	Version       bool   `long:"version" description:"Show version info and exit"`
 }
 
 // in/out streams
@@ -29,9 +29,9 @@ var (
 
 // subject dependencies
 var (
-	repairs = make(chan cagrr.Repair)
-	config  cagrr.Config
+	config  *cagrr.Config
 	logger  cagrr.Logger
+	repairs = make(chan cagrr.Repair)
 )
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 
 	scheduler.
 		TrackTo(database).
-		ServeAt(opts.Callback).
+		ServeAt(opts.ListenAddress).
 		Schedule(repairs)
 
 	fixer.
@@ -64,6 +64,7 @@ func init() {
 	config, err = cagrr.ReadConfiguration(opts.ConfigFile)
 	if err != nil {
 		logger.WithError(err).Error("Error when reading configuration")
+		os.Exit(1)
 	}
 
 }
