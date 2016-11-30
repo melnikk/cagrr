@@ -20,17 +20,18 @@ clean:
 	@rm -rf build
 
 test:
-	@ginkgo -r  -cover -coverpkg=./...  -trace -race
+	ginkgo -r -randomizeAllSpecs -progress -cover -coverpkg=./... -trace -race
 
 integration:
 	@go test -cover -tags="integration" -v ./...
 
 build:
 	mkdir build
-	cd cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../build/cagrr
+	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
+	cd ../repairctl && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/repairctl
 
 run:
-	go run cagrr/main.go -v debug
+	go run cmd/cagrr/main.go -v debug
 
 tar:
 	mkdir -p build/root/usr/local/bin

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	nethttp "net/http"
@@ -23,18 +24,23 @@ var opts struct {
 
 // in/out streams
 var (
-	out = os.Stdout
-	in  = os.Stdin
+	in  io.Reader = os.Stdin
+	out io.Writer = os.Stdout
 )
 
 // subject dependencies
 var (
-	config  *cagrr.Config
 	logger  cagrr.Logger
 	repairs = make(chan cagrr.Repair)
 )
 
 func main() {
+	config, err := cagrr.ReadConfiguration(opts.ConfigFile)
+	if err != nil {
+		logger.WithError(err).Error("Error when reading configuration")
+		os.Exit(1)
+	}
+
 	database := cagrr.NewDb("/tmp/cagrr.db")
 	scheduler := cagrr.NewScheduler(config.Conn, config.Clusters)
 	fixer := cagrr.NewFixer(&config.Conn)
@@ -56,17 +62,10 @@ func init() {
 	checkVersion()
 
 	logger = cagrr.NewLogger(opts.Verbosity, opts.LogFile)
+
 	if opts.Verbosity == "debug" {
 		go startProfiling()
 	}
-
-	var err error
-	config, err = cagrr.ReadConfiguration(opts.ConfigFile)
-	if err != nil {
-		logger.WithError(err).Error("Error when reading configuration")
-		os.Exit(1)
-	}
-
 }
 
 func startProfiling() {

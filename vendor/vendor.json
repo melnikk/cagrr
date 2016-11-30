@@ -59,10 +59,10 @@
 			"revisionTime": "2016-11-19T15:29:01Z"
 		},
 		{
-			"checksumSHA1": "MGk7cSnHqiL5soaovzgcJaNH3fc=",
-			"path": "gopkg.in/yaml.v1",
-			"revision": "9f9df34309c04878acc86042b16630b0f696e1de",
-			"revisionTime": "2014-09-24T16:16:07Z"
+			"checksumSHA1": "12GqsW8PiRPnezDDy0v4brZrndM=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+			"revisionTime": "2016-09-28T15:37:09Z"
 		}
 	],
 	"rootPath": "github.com/skbkontur/cagrr"
