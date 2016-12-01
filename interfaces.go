@@ -16,7 +16,7 @@ type DB interface {
 
 // Fixer starts repair cycle
 type Fixer interface {
-	Fix(jobs <-chan Repair)
+	Fix(jobs <-chan *Repair)
 }
 
 // Logger logs messages
@@ -32,25 +32,24 @@ type Logger interface {
 
 // Obtainer gets info about fragment from Cajrr
 type Obtainer interface {
-	Obtain(keyspace, cluster string, slices int) ([]Fragment, []string, error)
+	Obtain(keyspace, cluster string, slices int) ([]*Fragment, []*Table, error)
 }
 
 // Regulator moderates the process
 type Regulator interface {
-	LimitRateTo(time.Duration) Regulator
-	Limit()
+	LimitRateTo(key string, duration time.Duration)
+	Limit(key string)
 }
 
 // RepairRunner starts fragment repair via Cajrr
 type RepairRunner interface {
-	RunRepair(repair Repair) error
+	RunRepair(repair *Repair) error
 }
 
 // Scheduler creates jobs in time
 type Scheduler interface {
 	ServeAt(callback string) Scheduler
-	TrackTo(DB) Scheduler
-	Schedule(chan Repair)
+	Schedule(chan *Repair)
 }
 
 // ValueReader reads position data from DB

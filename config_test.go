@@ -15,11 +15,11 @@ var _ = Describe("Config", func() {
 			Expect(err).To(BeNil())
 		})
 		It("Should contain cajrr connection params", func() {
-			Expect(config.Conn).To(MatchFields(IgnoreExtras,
+			Expect(config.Conn).To(PointTo(MatchFields(IgnoreExtras,
 				Fields{
 					"Host": Equal("localhost"),
 					"Port": BeNumerically("==", 8080),
-				}))
+				})))
 		})
 	})
 	Context("File didn't exist", func() {

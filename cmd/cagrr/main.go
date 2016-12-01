@@ -31,7 +31,7 @@ var (
 // subject dependencies
 var (
 	logger  cagrr.Logger
-	repairs = make(chan cagrr.Repair)
+	repairs = make(chan *cagrr.Repair)
 )
 
 func main() {
@@ -42,13 +42,14 @@ func main() {
 	}
 
 	database := cagrr.NewDb("/tmp/cagrr.db")
+	cagrr.SetDatabase(database)
+
 	scheduler := cagrr.NewScheduler(config.Conn, config.Clusters)
-	fixer := cagrr.NewFixer(&config.Conn)
+	fixer := cagrr.NewFixer(config.Conn)
 
 	defer database.Close()
 
 	scheduler.
-		TrackTo(database).
 		ServeAt(opts.ListenAddress).
 		Schedule(repairs)
 

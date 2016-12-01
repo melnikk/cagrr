@@ -7,7 +7,7 @@ func NewFixer(runner RepairRunner) Fixer {
 }
 
 // Fix repairs from channel
-func (f *fixer) Fix(jobs <-chan Repair) {
+func (f *fixer) Fix(jobs <-chan *Repair) {
 	log.WithFields(f).Debug("Starting fix loop")
 	for job := range jobs {
 		err := f.runner.RunRepair(job)

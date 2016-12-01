@@ -4,6 +4,10 @@ import (
 	"github.com/boltdb/bolt"
 )
 
+var (
+	database DB
+)
+
 // NewDb connects to DB
 func NewDb(name string) DB {
 	instance := boltDB{}
@@ -33,6 +37,11 @@ func (d *boltDB) ReadValue(table, key string) string {
 	return <-result
 }
 
+// SetDatabase sets package-level DB interface
+func SetDatabase(db DB) {
+	database = db
+}
+
 func (d *boltDB) WriteValue(table, key, value string) error {
 	return d.db.Update(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(table))
@@ -41,4 +50,8 @@ func (d *boltDB) WriteValue(table, key, value string) error {
 		}
 		return b.Put([]byte(key), []byte(value))
 	})
+}
+
+func getDatabase() DB {
+	return database
 }

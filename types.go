@@ -10,15 +10,16 @@ import (
 // Cluster contains configuration of cluster item
 type Cluster struct {
 	ID        int
-	Name      string     `yaml:"name"`
-	Interval  string     `yaml:"interval"`
-	Keyspaces []Keyspace `yaml:"keyspaces"`
+	Name      string      `yaml:"name"`
+	Interval  string      `yaml:"interval"`
+	Keyspaces []*Keyspace `yaml:"keyspaces"`
+	percent   int32
 }
 
 // Config is a configuration file struct
 type Config struct {
-	Conn     Connector `yaml:"conn"`
-	Clusters []Cluster `yaml:"clusters"`
+	Conn     *Connector `yaml:"conn"`
+	Clusters []*Cluster `yaml:"clusters"`
 }
 
 // Connector connects scheduler to repairer
@@ -29,6 +30,8 @@ type Connector struct {
 
 // Fragment of Token range for repair
 type Fragment struct {
+	cluster  string
+	keyspace string
 	ID       int `json:"id"`
 	Endpoint string
 	Start    string
@@ -37,9 +40,17 @@ type Fragment struct {
 
 // Keyspace contains keyspace repair schedule description
 type Keyspace struct {
-	Name   string  `yaml:"name"`
-	Slices int     `yaml:"slices"`
-	Tables []Table `yaml:"tables"`
+	Name    string   `yaml:"name"`
+	Slices  int      `yaml:"slices"`
+	Tables  []*Table `yaml:"tables"`
+	percent int32
+}
+
+// Navigation holds coordinates of next repair
+type Navigation struct {
+	Cluster  string
+	Keyspace string
+	Table    string
 }
 
 // Queue is a basic FIFO queue based on a circular list that resizes as needed.
@@ -66,6 +77,7 @@ type Repair struct {
 	Keyspace string `json:"keyspace"`
 	Table    string `json:"table"`
 	Callback string `json:"callback"`
+	started  time.Time
 }
 
 // RepairStats for logging
@@ -73,11 +85,11 @@ type RepairStats struct {
 	Cluster          string
 	Keyspace         string
 	Table            string
+	Total            int32
 	Completed        int32
 	Percent          int32
-	Total            int32
-	TotalTables      int32
-	TotalPercent     int32
+	PercentKeyspace  int32
+	PercentCluster   int32
 	Estimate         string
 	EstimateKeyspace string
 	EstimateCluster  string
@@ -95,8 +107,14 @@ type RepairStatus struct {
 
 // Table contains column families to repair
 type Table struct {
-	Name   string `yaml:"name"`
-	Slices int    `yaml:"slices"`
+	Name      string `yaml:"name"`
+	Slices    int    `yaml:"slices"`
+	cluster   string
+	keyspace  string
+	repairs   map[int]*Repair
+	started   time.Time
+	total     int32
+	completed int32
 }
 
 // Token represents cassandra key range
@@ -122,22 +140,18 @@ type logger struct {
 }
 
 type regulator struct {
-	queue     *Queue
-	counter   int
-	threshold int
-	state     string
-	rate      time.Duration
-	Timeout   time.Duration
+	queues map[string]*Queue
+	size   int
 }
 
 type scheduler struct {
-	callback  string
-	clusters  []Cluster
-	db        DB
-	jobs      chan<- Repair
-	mux       *http.ServeMux
-	obtainer  Obtainer
-	regulator Regulator
+	callback   string
+	clusters   []*Cluster
+	jobs       chan<- *Repair
+	mux        *http.ServeMux
+	navigation *Navigation
+	obtainer   Obtainer
+	regulator  Regulator
 }
 
 type tableStats struct {
@@ -156,7 +170,6 @@ type tableRepairKey struct {
 }
 
 type tableRepairStats struct {
-	id       int
-	Started  time.Time
-	Finished time.Time
+	id      int
+	started time.Time
 }

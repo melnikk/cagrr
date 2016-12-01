@@ -11,6 +11,7 @@ func (n *QueueNode) String() string {
 
 // NewQueue returns a new queue with the given initial size.
 func NewQueue(size int) *Queue {
+	log.Debug(fmt.Sprintf("Creating new queue of size %d", size))
 	return &Queue{
 		nodes: make([]*QueueNode, size),
 		size:  size,
