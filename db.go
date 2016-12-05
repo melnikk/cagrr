@@ -25,7 +25,7 @@ func (d *boltDB) Close() {
 
 // CreateTables initializes tables needed for work
 func (d *boltDB) CreateTables() error {
-	tx, err := d.db.Begin(false)
+	tx, err := d.db.Begin(true)
 	if err != nil {
 		log.WithError(err).Warn("Error when starting transaction")
 		return err
@@ -61,10 +61,11 @@ func (d *boltDB) ReadValue(table, key string) string {
 	defer tx.Rollback()
 
 	b := tx.Bucket([]byte(table))
+	//if b != nil {
+	result = string(b.Get([]byte(key)))
+	//}
 
-	val := string(b.Get([]byte(key)))
-
-	return val
+	return result
 }
 
 // SetDatabase sets package-level DB interface
