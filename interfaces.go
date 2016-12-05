@@ -55,6 +55,7 @@ type Scheduler interface {
 // ValueReader reads position data from DB
 type ValueReader interface {
 	ReadValue(string, string) string
+	ReadOrCreate(string, string, string) string
 }
 
 // ValueWriter writes position to DB

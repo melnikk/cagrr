@@ -37,6 +37,7 @@ func (k *Keyspace) percentage() int32 {
 	if length > 0 {
 		result = result / length
 	}
+
 	return result
 }
 

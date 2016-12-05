@@ -65,10 +65,6 @@ func (s *scheduler) handleRepairStatus(w http.ResponseWriter, req *http.Request)
 	}
 }
 
-func (s *scheduler) needToRepair(frag *Fragment, table *Table) bool {
-	return s.navigation.Is(frag.cluster, frag.keyspace, table.Name)
-}
-
 func (s *scheduler) processComplete(status RepairStatus) {
 	log.WithFields(status).Debug("Status received")
 	repair := &status.Repair
@@ -82,17 +78,18 @@ func (s *scheduler) processComplete(status RepairStatus) {
 
 	table.completeFragment(repair.ID)
 	logstats := RepairStats{
-		Cluster:          cluster.Name,
-		Keyspace:         keyspace.Name,
-		Table:            table.Name,
-		Completed:        table.completed,
-		Total:            table.total,
-		Percent:          table.percentage(),
-		PercentCluster:   cluster.percentage(),
-		PercentKeyspace:  keyspace.percentage(),
-		Estimate:         fmt.Sprintf("%s", table.estimate()),
-		EstimateCluster:  fmt.Sprintf("%s", cluster.estimate()),
-		EstimateKeyspace: fmt.Sprintf("%s", keyspace.estimate()),
+		Cluster:            cluster.Name,
+		Keyspace:           keyspace.Name,
+		Table:              table.Name,
+		Completed:          table.completed,
+		Total:              table.total,
+		LastClusterSuccess: cluster.LastSuccesfullRepairTime(),
+		Percent:            table.percentage(),
+		PercentCluster:     cluster.percentage(),
+		PercentKeyspace:    keyspace.percentage(),
+		Estimate:           fmt.Sprintf("%s", table.estimate()),
+		EstimateCluster:    fmt.Sprintf("%s", cluster.estimate()),
+		EstimateKeyspace:   fmt.Sprintf("%s", keyspace.estimate()),
 	}
 	log.WithFields(logstats).Info("Fragment completed")
 
@@ -148,11 +145,12 @@ func (s *scheduler) scheduleTable(table *Table, fragments []*Fragment) {
 	callback := fmt.Sprintf("http://%s/status", s.callback)
 
 	for _, frag := range fragments {
-		/*
-			if !s.needToRepair(frag, table) {
-				continue
-			}
-		*/
+		if !frag.needToRepair() {
+			log.WithFields(frag).Debug("Fragment already scheduled. Skipping...")
+			table.completeFragment(frag.ID)
+			continue
+		}
+
 		s.regulator.Limit(frag.cluster)
 
 		rep := frag.createRepair(table, callback)
@@ -160,6 +158,7 @@ func (s *scheduler) scheduleTable(table *Table, fragments []*Fragment) {
 		table.repairs[rep.ID] = rep
 		s.jobs <- rep
 
+		frag.savePosition()
 	}
 
 	table.RegisterFinish()

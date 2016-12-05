@@ -32,6 +32,7 @@ type Connector struct {
 type Fragment struct {
 	cluster  string
 	keyspace string
+	position int
 	ID       int `json:"id"`
 	Endpoint string
 	Start    string
@@ -82,17 +83,18 @@ type Repair struct {
 
 // RepairStats for logging
 type RepairStats struct {
-	Cluster          string
-	Keyspace         string
-	Table            string
-	Total            int32
-	Completed        int32
-	Percent          int32
-	PercentKeyspace  int32
-	PercentCluster   int32
-	Estimate         string
-	EstimateKeyspace string
-	EstimateCluster  string
+	Cluster            string
+	Keyspace           string
+	Table              string
+	Total              int32
+	Completed          int32
+	Percent            int32
+	PercentKeyspace    int32
+	PercentCluster     int32
+	Estimate           string
+	EstimateKeyspace   string
+	EstimateCluster    string
+	LastClusterSuccess string
 }
 
 // RepairStatus keeps status of repair
