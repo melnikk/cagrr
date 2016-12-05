@@ -33,7 +33,10 @@ func (k *Keyspace) percentage() int32 {
 	for _, t := range k.Tables {
 		result += t.percentage()
 	}
-	result = result / int32(len(k.Tables))
+	length := int32(len(k.Tables))
+	if length > 0 {
+		result = result / length
+	}
 	return result
 }
 

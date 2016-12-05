@@ -41,7 +41,10 @@ func (t *Table) findRepair(id int) *Repair {
 }
 
 func (t *Table) percentage() int32 {
-	percent := t.completed * 100 / t.total
+	var percent int32
+	if t.total > 0 {
+		percent = t.completed * 100 / t.total
+	}
 
 	return percent
 }
