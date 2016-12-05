@@ -1,5 +1,5 @@
-Cassandra Go Range Repair tool
-==============================
+Cassandra Repair Scheduler
+==========================
 [![Build Status](https://travis-ci.org/skbkontur/cagrr.svg?branch=master)](https://travis-ci.org/skbkontur/cagrr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/skbkontur/cagrr)](https://goreportcard.com/report/github.com/skbkontur/cagrr)
 [![Coverage Status](https://coveralls.io/repos/github/skbkontur/cagrr/badge.svg?branch=master)](https://coveralls.io/github/skbkontur/cagrr?branch=master)
