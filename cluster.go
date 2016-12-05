@@ -21,6 +21,9 @@ func (c *Cluster) LastSuccesfullRepairTime() string {
 func (c *Cluster) RegisterStart() {
 	c.percent = 0
 	db := getDatabase()
+
+	key := dbKey("start", c.Name)
+	db.WriteValue(clusterRepairs, key, time.Now().String())
 	db.WriteValue(currentPositions, c.Name, "0")
 }
 
@@ -28,32 +31,45 @@ func (c *Cluster) RegisterStart() {
 func (c *Cluster) RegisterFinish() {
 	c.percent = 100
 
-	key := dbKey("lastSuccess", c.Name)
+	successKey := dbKey("lastSuccess", c.Name)
+	startKey := dbKey("start", c.Name)
 
 	db := getDatabase()
-	db.WriteValue(clusterRepairs, key, time.Now().String())
+	db.WriteValue(clusterRepairs, successKey, time.Now().String())
+	db.WriteValue(clusterRepairs, startKey, "")
 	db.WriteValue(savedPositions, c.Name, "0")
 }
 
-func (c *Cluster) percentage() int32 {
+func (c *Cluster) percentage() float32 {
 	if c.percent == 100 {
-		return c.percent
+		return float32(c.percent)
 	}
-	result := int32(0)
+	result := float32(0)
 	for _, k := range c.Keyspaces {
 		result += k.percentage()
 	}
-	result = result / int32(len(c.Keyspaces))
+	result = result / float32(len(c.Keyspaces))
 	c.percent = result
 	return result
 }
 
 func (c *Cluster) estimate() time.Duration {
-	result := 0
-	for _, k := range c.Keyspaces {
-		result += int(k.estimate())
+	percent := c.percentage()
+	if percent == 100 {
+		return 0
 	}
-	result = result / len(c.Keyspaces)
+	db := getDatabase()
+	key := dbKey("start", c.Name)
+	val := db.ReadValue(clusterRepairs, key)
+	started, err := time.Parse("2006-01-02 15:04:05.9 -0700 -07", val)
+	if err != nil {
+		log.WithError(err).Warn("Error parse time of cluster start")
+		return 0
+	}
+	now := time.Now()
+	duration := now.Sub(started)
+
+	result := float32(duration) * float32((100-percent)/percent)
 	return time.Duration(result)
 }
 

@@ -4,15 +4,27 @@ import (
 	"time"
 )
 
+const (
+	keyspaceRepairs = "KeyspaceRepairs"
+)
+
 // RegisterStart sets start time of keyspace repair
 func (k *Keyspace) RegisterStart(tables []*Table) {
 	k.percent = 0
 	k.Tables = tables
+
+	db := getDatabase()
+	key := dbKey("start", k.Name)
+	db.WriteValue(keyspaceRepairs, key, time.Now().String())
 }
 
 // RegisterFinish sets value of successful keyspace repair
 func (k *Keyspace) RegisterFinish() {
 	k.percent = 100
+
+	startKey := dbKey("start", k.Name)
+	db := getDatabase()
+	db.WriteValue(clusterRepairs, startKey, "")
 }
 
 func (k *Keyspace) findTable(name string) *Table {
@@ -24,16 +36,16 @@ func (k *Keyspace) findTable(name string) *Table {
 	panic("Table not found")
 }
 
-func (k *Keyspace) percentage() int32 {
+func (k *Keyspace) percentage() float32 {
 	if k.percent == 100 {
 		return k.percent
 	}
 
-	result := int32(0)
+	result := float32(0)
 	for _, t := range k.Tables {
 		result += t.percentage()
 	}
-	length := int32(len(k.Tables))
+	length := float32(len(k.Tables))
 	if length > 0 {
 		result = result / length
 	}
@@ -42,10 +54,21 @@ func (k *Keyspace) percentage() int32 {
 }
 
 func (k *Keyspace) estimate() time.Duration {
-	result := 0
-	for _, t := range k.Tables {
-		result += int(t.estimate())
+	percent := k.percentage()
+	if percent == 100 {
+		return 0
 	}
-	result = result / len(k.Tables)
+	db := getDatabase()
+	key := dbKey("start", k.Name)
+	val := db.ReadValue(keyspaceRepairs, key)
+	started, err := time.Parse("2006-01-02 15:04:05.9 -0700 -07", val)
+	if err != nil {
+		log.WithError(err).Warn("Error parse time of keyspace start")
+		return 0
+	}
+	now := time.Now()
+	duration := now.Sub(started)
+
+	result := float32(duration) * float32((100-percent)/percent)
 	return time.Duration(result)
 }

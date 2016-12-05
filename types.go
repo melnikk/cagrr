@@ -13,7 +13,7 @@ type Cluster struct {
 	Name      string      `yaml:"name"`
 	Interval  string      `yaml:"interval"`
 	Keyspaces []*Keyspace `yaml:"keyspaces"`
-	percent   int32
+	percent   float32
 }
 
 // Config is a configuration file struct
@@ -44,7 +44,7 @@ type Keyspace struct {
 	Name    string   `yaml:"name"`
 	Slices  int      `yaml:"slices"`
 	Tables  []*Table `yaml:"tables"`
-	percent int32
+	percent float32
 }
 
 // Navigation holds coordinates of next repair
@@ -88,9 +88,9 @@ type RepairStats struct {
 	Table              string
 	Total              int32
 	Completed          int32
-	Percent            int32
-	PercentKeyspace    int32
-	PercentCluster     int32
+	Percent            float32
+	PercentKeyspace    float32
+	PercentCluster     float32
 	Estimate           string
 	EstimateKeyspace   string
 	EstimateCluster    string
@@ -154,24 +154,4 @@ type scheduler struct {
 	navigation *Navigation
 	obtainer   Obtainer
 	regulator  Regulator
-}
-
-type tableStats struct {
-	cluster   string
-	keyspace  string
-	table     string
-	repairs   map[int]*tableRepairStats
-	started   time.Time
-	total     int32
-	completed int32
-}
-type tableRepairKey struct {
-	cluster  string
-	keyspace string
-	table    string
-}
-
-type tableRepairStats struct {
-	id      int
-	started time.Time
 }
