@@ -6,14 +6,17 @@ import (
 )
 
 const (
-	clusterRepairs = "ClusterRepairs"
+	clusterRepairs        = "ClusterRepairs"
+	clusterLastSuccessKey = "LastSuccess"
+	clusterStartKey       = "start"
+	clusterTimeFormat     = "2006-01-02 15:04:05.9 -0700 -07"
 )
 
 // LastSuccesfullRepairTime returns Timestamp of last repair
 func (c *Cluster) LastSuccesfullRepairTime() string {
 	db := getDatabase()
-	key := dbKey("lastSuccess", c.Name)
-	val := db.ReadOrCreate(clusterRepairs, key, time.Time{}.String())
+	key := dbKey(clusterLastSuccessKey, c.Name)
+	val := db.ReadOrCreate(clusterRepairs, key, time.Time{}.Format(clusterTimeFormat))
 	return val
 }
 
@@ -22,8 +25,8 @@ func (c *Cluster) RegisterStart() {
 	c.percent = 0
 	db := getDatabase()
 
-	key := dbKey("start", c.Name)
-	db.WriteValue(clusterRepairs, key, time.Now().String())
+	key := dbKey(clusterStartKey, c.Name)
+	db.WriteValue(clusterRepairs, key, time.Now().Format(clusterTimeFormat))
 	db.WriteValue(currentPositions, c.Name, "0")
 }
 
@@ -31,11 +34,11 @@ func (c *Cluster) RegisterStart() {
 func (c *Cluster) RegisterFinish() {
 	c.percent = 100
 
-	successKey := dbKey("lastSuccess", c.Name)
-	startKey := dbKey("start", c.Name)
+	successKey := dbKey(clusterLastSuccessKey, c.Name)
+	startKey := dbKey(clusterStartKey, c.Name)
 
 	db := getDatabase()
-	db.WriteValue(clusterRepairs, successKey, time.Now().String())
+	db.WriteValue(clusterRepairs, successKey, time.Now().Format(clusterTimeFormat))
 	db.WriteValue(clusterRepairs, startKey, "")
 	db.WriteValue(savedPositions, c.Name, "0")
 }
@@ -59,9 +62,9 @@ func (c *Cluster) estimate() time.Duration {
 		return 0
 	}
 	db := getDatabase()
-	key := dbKey("start", c.Name)
+	key := dbKey(clusterStartKey, c.Name)
 	val := db.ReadValue(clusterRepairs, key)
-	started, err := time.Parse("2006-01-02 15:04:05.9 -0700 -07", val)
+	started, err := time.Parse(clusterTimeFormat, val)
 	if err != nil {
 		log.WithError(err).Warn("Error parse time of cluster start")
 		return 0

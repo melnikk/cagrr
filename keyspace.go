@@ -5,7 +5,9 @@ import (
 )
 
 const (
-	keyspaceRepairs = "KeyspaceRepairs"
+	keyspaceRepairs    = "KeyspaceRepairs"
+	keyspaceTimeFormat = "2006-01-02 15:04:05.9 -0700 -07"
+	keyspaceStartKey   = "start"
 )
 
 // RegisterStart sets start time of keyspace repair
@@ -14,15 +16,19 @@ func (k *Keyspace) RegisterStart(tables []*Table) {
 	k.Tables = tables
 
 	db := getDatabase()
-	key := dbKey("start", k.Name)
-	db.WriteValue(keyspaceRepairs, key, time.Now().String())
+	key := dbKey(keyspaceStartKey, k.Name)
+	db.WriteValue(keyspaceRepairs, key, time.Now().Format(keyspaceTimeFormat))
 }
 
 // RegisterFinish sets value of successful keyspace repair
 func (k *Keyspace) RegisterFinish() {
 	k.percent = 100
 
-	startKey := dbKey("start", k.Name)
+	k.deleteStartKey()
+}
+
+func (k *Keyspace) deleteStartKey() {
+	startKey := dbKey(keyspaceStartKey, k.Name)
 	db := getDatabase()
 	db.WriteValue(clusterRepairs, startKey, "")
 }
@@ -59,9 +65,9 @@ func (k *Keyspace) estimate() time.Duration {
 		return 0
 	}
 	db := getDatabase()
-	key := dbKey("start", k.Name)
+	key := dbKey(keyspaceStartKey, k.Name)
 	val := db.ReadValue(keyspaceRepairs, key)
-	started, err := time.Parse("2006-01-02 15:04:05.9 -0700 -07", val)
+	started, err := time.Parse(keyspaceTimeFormat, val)
 	if err != nil {
 		log.WithError(err).Warn("Error parse time of keyspace start")
 		return 0
