@@ -28,7 +28,6 @@ integration:
 build:
 	mkdir build
 	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
-	cd cmd/repairctl && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/repairctl
 
 run:
 	go run cmd/cagrr/main.go -v debug
