@@ -14,6 +14,14 @@ type DB interface {
 	Closer
 }
 
+// DurationQueue is a fixed size FIFO queue of durations
+type DurationQueue interface {
+	Push(time.Duration)
+	Pop() time.Duration
+	Len() int
+	Average() time.Duration
+}
+
 // Fixer starts repair cycle
 type Fixer interface {
 	Fix(jobs <-chan *Repair)
@@ -32,13 +40,15 @@ type Logger interface {
 
 // Obtainer gets info about fragment from Cajrr
 type Obtainer interface {
-	Obtain(keyspace, cluster string, slices int) ([]*Fragment, []*Table, error)
+	ObtainTables(cluster, keyspace string) ([]*Table, error)
+	ObtainFragments(cluster, keyspace string, slices int) ([]*Fragment, error)
 }
 
 // Regulator moderates the process
 type Regulator interface {
-	LimitRateTo(key string, duration time.Duration)
+	LimitRateTo(key string, duration time.Duration) time.Duration
 	Limit(key string)
+	Rate(key string) time.Duration
 }
 
 // RepairRunner starts fragment repair via Cajrr
@@ -48,8 +58,31 @@ type RepairRunner interface {
 
 // Scheduler creates jobs in time
 type Scheduler interface {
-	ServeAt(callback string) Scheduler
+	ObtainBy(Obtainer) Scheduler
+	RegulateWith(Regulator) Scheduler
 	Schedule(chan *Repair)
+	TrackIn(Tracker) Scheduler
+}
+
+// Server serves repair handlers
+type Server interface {
+	ServeAt(callback string) Server
+}
+
+// Tracker keeps progress of repair
+type Tracker interface {
+	CompleteFragment(cluster, keyspace, table string, repair int) time.Duration
+	Estimate(cluster string) (time.Duration, time.Duration, time.Duration)
+	FragmentAverage(cluster string) time.Duration
+	IsCompleted(cluster, keyspace, table string, repair int) bool
+	LastSuccess(cluster string) time.Time
+	Percentage(cluster string) (float32, float32, float32)
+	Restart(cluster, keyspace, table string, repair int)
+	//StartCluster(string, int)
+	//StartKeyspace(string, string, int)
+	//StartTable(string, string, string, int)
+	Total(string) int
+	Track(cluster, keyspace, table string, repair, total int)
 }
 
 // ValueReader reads position data from DB

@@ -1,61 +1,42 @@
 package cagrr
 
-import (
-	"fmt"
-	"time"
-)
-
-func (n *QueueNode) String() string {
-	return fmt.Sprint(n.Value)
-}
+import "time"
 
 // NewQueue returns a new queue with the given initial size.
-func NewQueue(size int) *Queue {
-	log.Debug(fmt.Sprintf("Creating new queue of size %d", size))
-	return &Queue{
-		nodes: make([]*QueueNode, size),
+func NewQueue(size int) DurationQueue {
+	return &queue{
+		nodes: make([]time.Duration, size),
 		size:  size,
 	}
 }
 
-// Push adds a node to the queue.
-func (q *Queue) Push(n *QueueNode) {
-	if q.head == q.tail && q.count > 0 {
-		nodes := make([]*QueueNode, len(q.nodes)+q.size)
-		copy(nodes, q.nodes[q.head:])
-		copy(nodes[len(q.nodes)-q.head:], q.nodes[:q.head])
-		q.head = 0
-		q.tail = len(q.nodes)
-		q.nodes = nodes
+// Average counts average queue
+func (q *queue) Average() time.Duration {
+	sum := int64(0)
+	for _, node := range q.nodes {
+		sum = sum + int64(node)
 	}
-	q.nodes[q.tail] = n
-	q.tail = (q.tail + 1) % len(q.nodes)
-	q.count++
+	result := sum / int64(q.size)
+	return time.Duration(result)
+}
+
+// Len returns actual size of queue
+func (q *queue) Len() int {
+	return len(q.nodes)
 }
 
 // Pop removes and returns a node from the queue in first to last order.
-func (q *Queue) Pop() *QueueNode {
-	if q.count == 0 {
-		return nil
-	}
-	node := q.nodes[q.head]
-	q.head = (q.head + 1) % len(q.nodes)
-	q.count--
-	return node
+func (q *queue) Pop() time.Duration {
+	x := q.nodes[0]
+	// Discard top element
+	q.nodes = q.nodes[1:]
+	return x
 }
 
-// Average counts average queue
-func (q *Queue) Average() time.Duration {
-	if q.count == 0 {
-		return 0
+// Push adds a node to the queue.
+func (q *queue) Push(d time.Duration) {
+	q.nodes = append(q.nodes, d)
+	if len(q.nodes) > q.size {
+		q.nodes = q.nodes[1:]
 	}
-	count := 0
-	sum := time.Duration(0)
-	for _, node := range q.nodes {
-		if nil != node {
-			sum = sum + node.Value
-			count = count + 1
-		}
-	}
-	return sum / time.Duration(count)
 }

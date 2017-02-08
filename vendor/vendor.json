@@ -43,12 +43,6 @@
 			"revisionTime": "2016-09-09T04:25:48Z"
 		},
 		{
-			"checksumSHA1": "rKV8YLkXpeNG1Oix8hlYqVsEFb4=",
-			"path": "github.com/streadway/amqp",
-			"revision": "2e25825abdbd7752ff08b270d313b93519a0a232",
-			"revisionTime": "2016-03-11T21:55:03Z"
-		},
-		{
 			"path": "go",
 			"revision": ""
 		},

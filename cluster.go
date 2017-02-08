@@ -1,90 +1,109 @@
 package cagrr
 
 import (
-	"strings"
+	"fmt"
 	"time"
 )
 
-const (
-	clusterRepairs        = "ClusterRepairs"
-	clusterLastSuccessKey = "LastSuccess"
-	clusterStartKey       = "start"
-	clusterTimeFormat     = "2006-01-02 15:04:05.9 -0700 -07"
-)
+// Schedule cluster repair
+func (c *Cluster) Schedule(jobs chan *Repair) {
+	keyspaces, total := c.obtainKeyspaces()
 
-// LastSuccesfullRepairTime returns Timestamp of last repair
-func (c *Cluster) LastSuccesfullRepairTime() string {
-	db := getDatabase()
-	key := dbKey(clusterLastSuccessKey, c.Name)
-	val := db.ReadOrCreate(clusterRepairs, key, time.Time{}.Format(clusterTimeFormat))
-	return val
-}
+	for {
+		log.WithFields(c).Debug("Starting cluster")
 
-// RegisterStart sets start time of cluster repair
-func (c *Cluster) RegisterStart() {
-	c.percent = 0
-	db := getDatabase()
+		for _, k := range keyspaces {
+			log.WithFields(k).Debug("Starting keyspace")
 
-	key := dbKey(clusterStartKey, c.Name)
-	db.WriteValue(clusterRepairs, key, time.Now().Format(clusterTimeFormat))
-	db.WriteValue(currentPositions, c.Name, "0")
-}
+			for _, t := range k.Tables {
+				log.WithFields(t).Debug("Starting table")
 
-// RegisterFinish sets value of successful whole cluster repair
-func (c *Cluster) RegisterFinish() {
-	c.percent = 100
+				for _, r := range t.Repairs {
 
-	successKey := dbKey(clusterLastSuccessKey, c.Name)
-	startKey := dbKey(clusterStartKey, c.Name)
+					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID) {
+						log.WithFields(r).Debug("Repair already completed")
+						continue
+					}
 
-	db := getDatabase()
-	db.WriteValue(clusterRepairs, successKey, time.Now().Format(clusterTimeFormat))
-	db.WriteValue(clusterRepairs, startKey, "")
-	db.WriteValue(savedPositions, c.Name, "0")
-}
+					c.regulator.Limit(c.Name)
 
-func (c *Cluster) percentage() float32 {
-	if c.percent == 100 {
-		return float32(c.percent)
-	}
-	result := float32(0)
-	for _, k := range c.Keyspaces {
-		result += k.percentage()
-	}
-	result = result / float32(len(c.Keyspaces))
-	c.percent = result
-	return result
-}
+					log.WithFields(r).Debug("Scheduling fragment")
+					jobs <- r
 
-func (c *Cluster) estimate() time.Duration {
-	percent := c.percentage()
-	if percent == 100 {
-		return 0
-	}
-	db := getDatabase()
-	key := dbKey(clusterStartKey, c.Name)
-	val := db.ReadValue(clusterRepairs, key)
-	started, err := time.Parse(clusterTimeFormat, val)
-	if err != nil {
-		log.WithError(err).Warn("Error parse time of cluster start")
-		return 0
-	}
-	now := time.Now()
-	duration := now.Sub(started)
-
-	result := float32(duration) * float32((100-percent)/percent)
-	return time.Duration(result)
-}
-
-func (c *Cluster) findKeyspace(name string) *Keyspace {
-	for i, ks := range c.Keyspaces {
-		if ks.Name == name {
-			return c.Keyspaces[i]
+					c.tracker.Track(c.Name, k.Name, t.Name, r.ID, total)
+				}
+			}
 		}
+
+		c.sleep()
 	}
-	return nil
 }
 
-func dbKey(name, cluster string) string {
-	return strings.Replace(name+cluster, " ", "", -1)
+// ObtainBy given obtainer
+func (c *Cluster) ObtainBy(o Obtainer) Scheduler {
+	c.obtainer = o
+	return c
+}
+
+// RegulateWith given rate limiter
+func (c *Cluster) RegulateWith(r Regulator) Scheduler {
+	c.regulator = r
+	return c
+}
+
+// TrackIn given tracker
+func (c *Cluster) TrackIn(t Tracker) Scheduler {
+	c.tracker = t
+	return c
+}
+
+func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
+	total := 0
+	var result []*Keyspace
+
+	for _, k := range c.Keyspaces {
+		tables, err := c.obtainer.ObtainTables(c.Name, k.Name)
+		if err != nil {
+			log.WithError(err).Warn("Tables obtain error")
+			continue
+		}
+
+		for _, t := range tables {
+			fragments, err := c.obtainer.ObtainFragments(c.Name, k.Name, t.Slices)
+			if err != nil {
+				log.WithError(err).Warn("Fragments obtain error")
+				continue
+			}
+			var repairs []*Repair
+			for _, f := range fragments {
+				r := &Repair{
+					ID:       f.ID,
+					Start:    f.Start,
+					End:      f.End,
+					Endpoint: f.Endpoint,
+					Cluster:  c.Name,
+					Keyspace: k.Name,
+					Table:    t.Name,
+				}
+				repairs = append(repairs, r)
+			}
+			tableTotal := len(repairs)
+			total += tableTotal
+
+			t.Repairs = repairs
+			tables = append(tables, t)
+		}
+		result = append(result, k)
+	}
+	return result, total
+}
+
+func (c *Cluster) sleep() {
+	duration, err := time.ParseDuration(c.Interval)
+	if err != nil {
+		log.WithFields(c).WithError(err).Warn("Duration parsing error")
+		duration = week
+	}
+	log.WithFields(c).Debug(fmt.Sprintf("Cluster scheduled. Going to sleep for: %s", duration))
+	time.Sleep(duration)
 }

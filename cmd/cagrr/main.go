@@ -42,19 +42,24 @@ func main() {
 	}
 
 	database := cagrr.NewDb("/tmp/cagrr.db")
-	cagrr.SetDatabase(database)
-
-	scheduler := cagrr.NewScheduler(config.Conn, config.Clusters)
+	tracker := cagrr.NewTracker(database)
+	regulator := cagrr.NewRegulator(config.BufferLength)
+	server := cagrr.NewServer(regulator, tracker)
 	fixer := cagrr.NewFixer(config.Conn)
 
 	defer database.Close()
 
-	scheduler.
-		ServeAt(opts.ListenAddress).
-		Schedule(repairs)
+	server.ServeAt(opts.ListenAddress)
 
-	fixer.
-		Fix(repairs)
+	for _, cluster := range config.Clusters {
+		go cluster.
+			ObtainBy(config.Conn).
+			RegulateWith(regulator).
+			TrackIn(tracker).
+			Schedule(repairs)
+	}
+
+	fixer.Fix(repairs)
 
 }
 

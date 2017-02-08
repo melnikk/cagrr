@@ -13,16 +13,19 @@ type Cluster struct {
 	Name      string      `yaml:"name"`
 	Interval  string      `yaml:"interval"`
 	Keyspaces []*Keyspace `yaml:"keyspaces"`
-	percent   float32
+	obtainer  Obtainer
+	regulator Regulator
+	tracker   Tracker
 }
 
 // Config is a configuration file struct
 type Config struct {
-	Conn     *Connector `yaml:"conn"`
-	Clusters []*Cluster `yaml:"clusters"`
+	Conn         *Connector `yaml:"conn"`
+	BufferLength int        `yaml:"buffer"`
+	Clusters     []*Cluster `yaml:"clusters"`
 }
 
-// Connector connects scheduler to repairer
+// Connector to repair service
 type Connector struct {
 	Host string
 	Port int
@@ -30,9 +33,6 @@ type Connector struct {
 
 // Fragment of Token range for repair
 type Fragment struct {
-	cluster  string
-	keyspace string
-	position int
 	ID       int `json:"id"`
 	Endpoint string
 	Start    string
@@ -41,10 +41,9 @@ type Fragment struct {
 
 // Keyspace contains keyspace repair schedule description
 type Keyspace struct {
-	Name    string   `yaml:"name"`
-	Slices  int      `yaml:"slices"`
-	Tables  []*Table `yaml:"tables"`
-	percent float32
+	Name   string `yaml:"name"`
+	Slices int    `yaml:"slices"`
+	Tables []*Table
 }
 
 // Navigation holds coordinates of next repair
@@ -54,31 +53,15 @@ type Navigation struct {
 	Table    string
 }
 
-// Queue is a basic FIFO queue based on a circular list that resizes as needed.
-type Queue struct {
-	nodes []*QueueNode
-	size  int
-	head  int
-	tail  int
-	count int
-}
-
-// QueueNode is Duration struct
-type QueueNode struct {
-	Value time.Duration
-}
-
 // Repair object
 type Repair struct {
 	ID       int    `json:"id"`
-	Start    string `json:"start"`
-	End      string `json:"end"`
-	Endpoint string `json:"endpoint"`
 	Cluster  string `json:"cluster"`
 	Keyspace string `json:"keyspace"`
 	Table    string `json:"table"`
-	Callback string `json:"callback"`
-	started  time.Time
+	Endpoint string `json:"endpoint"`
+	Start    string `json:"start"`
+	End      string `json:"end"`
 }
 
 // RepairStats for logging
@@ -86,37 +69,33 @@ type RepairStats struct {
 	Cluster            string
 	Keyspace           string
 	Table              string
-	Total              int32
-	Completed          int32
+	Total              int
+	LastClusterSuccess time.Time
+	FragmentDuration   time.Duration
+	FragmentAverage    time.Duration
+	Rate               time.Duration
 	Percent            float32
 	PercentKeyspace    float32
 	PercentCluster     float32
-	Estimate           string
-	EstimateKeyspace   string
-	EstimateCluster    string
-	LastClusterSuccess string
+	Estimate           time.Duration
+	EstimateKeyspace   time.Duration
+	EstimateCluster    time.Duration
 }
 
 // RepairStatus keeps status of repair
 type RepairStatus struct {
 	Repair  Repair
-	Command int32
-	Options string
 	Message string
-	Session string
 	Type    string
 }
 
 // Table contains column families to repair
 type Table struct {
-	Name      string `yaml:"name"`
-	Slices    int    `yaml:"slices"`
-	cluster   string
-	keyspace  string
-	repairs   map[int]*Repair
-	started   time.Time
-	total     int32
-	completed int32
+	Name    string  `yaml:"name"`
+	Size    int64   `yaml:"size"`
+	Slices  int     `yaml:"slices"`
+	Weight  float32 `yaml:"weight"`
+	Repairs []*Repair
 }
 
 // Token represents cassandra key range
@@ -141,12 +120,17 @@ type logger struct {
 	fields map[string]interface{}
 }
 
+type queue struct {
+	nodes []time.Duration
+	size  int
+}
+
 type regulator struct {
-	queues map[string]*Queue
+	queues map[string]DurationQueue
 	size   int
 }
 
-type scheduler struct {
+type server struct {
 	callback   string
 	clusters   []*Cluster
 	jobs       chan<- *Repair
@@ -154,4 +138,16 @@ type scheduler struct {
 	navigation *Navigation
 	obtainer   Obtainer
 	regulator  Regulator
+	tracker    Tracker
+}
+
+type tracker struct {
+	completions map[string]bool
+	counts      map[string]int
+	currents    map[string]string
+	db          DB
+	percents    map[string]float32
+	starts      map[string]time.Time
+	successes   map[string]time.Time
+	totals      map[string]int
 }

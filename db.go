@@ -3,8 +3,8 @@ package cagrr
 import "github.com/boltdb/bolt"
 
 var (
-	database     DB
-	tablesNeeded = []string{clusterRepairs, currentPositions, savedPositions}
+	database DB
+	//tablesNeeded = []string{clusterRepairs, currentPositions, savedPositions}
 )
 
 // NewDb connects to DB
@@ -31,14 +31,17 @@ func (d *boltDB) CreateTables() error {
 		return err
 	}
 	defer tx.Rollback()
-	for _, table := range tablesNeeded {
-		_, err := tx.CreateBucketIfNotExists([]byte(table))
-		if err != nil {
-			log.WithError(err).Warn("Error when creating bucket")
-			return err
+	/*
+		for _, table := range tablesNeeded {
+			_, err := tx.CreateBucketIfNotExists([]byte(table))
+			if err != nil {
+				log.WithError(err).Warn("Error when creating bucket")
+				return err
+			}
 		}
-	}
-	tx.Commit()
+
+		tx.Commit()
+	*/
 	return nil
 }
 
