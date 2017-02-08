@@ -42,8 +42,7 @@ type Fragment struct {
 // Keyspace contains keyspace repair schedule description
 type Keyspace struct {
 	Name   string `yaml:"name"`
-	Slices int    `yaml:"slices"`
-	Tables []*Table
+	tables []*Table
 }
 
 // Navigation holds coordinates of next repair
@@ -95,7 +94,7 @@ type Table struct {
 	Size    int64   `yaml:"size"`
 	Slices  int     `yaml:"slices"`
 	Weight  float32 `yaml:"weight"`
-	Repairs []*Repair
+	repairs []*Repair
 }
 
 // Token represents cassandra key range

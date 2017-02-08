@@ -15,10 +15,10 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 		for _, k := range keyspaces {
 			log.WithFields(k).Debug("Starting keyspace")
 
-			for _, t := range k.Tables {
+			for _, t := range k.Tables() {
 				log.WithFields(t).Debug("Starting table")
 
-				for _, r := range t.Repairs {
+				for _, r := range t.Repairs() {
 
 					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID) {
 						log.WithFields(r).Debug("Repair already completed")
@@ -90,9 +90,10 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 			tableTotal := len(repairs)
 			total += tableTotal
 
-			t.Repairs = repairs
+			t.SetRepairs(repairs)
 			tables = append(tables, t)
 		}
+		k.SetTables(tables)
 		result = append(result, k)
 	}
 	return result, total
