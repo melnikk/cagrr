@@ -150,10 +150,7 @@ type server struct {
 type tracker struct {
 	completions map[string]bool
 	counts      map[string]int
-	currents    map[string]string
 	db          DB
-	percents    map[string]float32
+	durations   map[string]time.Duration
 	starts      map[string]time.Time
-	successes   map[string]time.Time
-	totals      map[string]int
 }

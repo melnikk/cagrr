@@ -7,11 +7,10 @@ import (
 
 // Schedule cluster repair
 func (c *Cluster) Schedule(jobs chan *Repair) {
-	keyspaces, total := c.obtainKeyspaces()
 
 	for {
 		log.WithFields(c).Debug("Starting cluster")
-
+		keyspaces, total := c.obtainKeyspaces()
 		for _, k := range keyspaces {
 			log.WithFields(k).Debug("Starting keyspace")
 
@@ -95,7 +94,6 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 
 			t.SetRepairs(repairs)
 			t.SetTotal(tableTotal)
-			tables = append(tables, t)
 		}
 		k.SetTables(tables)
 		k.SetTotal(keyspaceTotal)
