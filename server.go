@@ -69,30 +69,7 @@ func (s *server) processComplete(status RepairStatus) {
 	id := repair.ID
 
 	duration := s.tracker.CompleteFragment(cluster, keyspace, table, id)
-	rate := s.regulator.LimitRateTo(cluster, duration)
-
-	cp, kp, tp := s.tracker.Percentage(cluster)
-	ce, ke, te := s.tracker.Estimate(cluster)
-	fa := s.tracker.FragmentAverage(cluster)
-	ls := s.tracker.LastSuccess(cluster)
-
-	logstats := RepairStats{
-		Cluster:            cluster,
-		Keyspace:           keyspace,
-		Table:              table,
-		Total:              s.tracker.Total(cluster),
-		LastClusterSuccess: ls,
-		FragmentDuration:   duration,
-		FragmentAverage:    fa,
-		Rate:               rate,
-		Estimate:           te,
-		EstimateCluster:    ce,
-		EstimateKeyspace:   ke,
-		Percent:            tp,
-		PercentCluster:     cp,
-		PercentKeyspace:    kp,
-	}
-	log.WithFields(logstats).Info("Fragment completed")
+	log.WithFields(repair).Info(fmt.Sprintf("Fragment completed in %s", duration))
 
 }
 

@@ -30,7 +30,8 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 					log.WithFields(r).Debug("Scheduling fragment")
 					jobs <- r
 
-					c.tracker.Track(c.Name, k.Name, t.Name, r.ID, total)
+					stats := c.tracker.Track(c.Name, k.Name, t.Name, r.ID, t.Total(), k.Total(), total)
+					log.WithFields(stats).Debug("Repair scheduled")
 				}
 			}
 		}
@@ -67,6 +68,7 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 			log.WithError(err).Warn("Tables obtain error")
 			continue
 		}
+		keyspaceTotal := 0
 
 		for _, t := range tables {
 			fragments, err := c.obtainer.ObtainFragments(c.Name, k.Name, t.Slices)
@@ -89,11 +91,14 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 			}
 			tableTotal := len(repairs)
 			total += tableTotal
+			keyspaceTotal += tableTotal
 
 			t.SetRepairs(repairs)
+			t.SetTotal(tableTotal)
 			tables = append(tables, t)
 		}
 		k.SetTables(tables)
+		k.SetTotal(keyspaceTotal)
 		result = append(result, k)
 	}
 	return result, total

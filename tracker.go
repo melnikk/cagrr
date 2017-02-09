@@ -17,7 +17,6 @@ func NewTracker(db DB) Tracker {
 		percents:    make(map[string]float32),
 		starts:      make(map[string]time.Time),
 		successes:   make(map[string]time.Time),
-		totals:      make(map[string]int),
 	}
 }
 
@@ -25,7 +24,6 @@ func NewTracker(db DB) Tracker {
 func (t *tracker) CompleteFragment(cluster, keyspace, table string, id int) time.Duration {
 	key := t.createKey(cluster, keyspace, table)
 	t.complete(key)
-	t.calculatePercents(cluster)
 
 	key = t.createKey(cluster, keyspace, table, id)
 	t.completions[key] = true
@@ -42,140 +40,51 @@ func (t *tracker) IsCompleted(cluster, keyspace, table string, id int) bool {
 	return completed
 }
 
-// Estimate durations of repair
-func (t *tracker) Estimate(cluster string) (time.Duration, time.Duration, time.Duration) {
-
-	ck, kk, tk := t.keys(cluster)
-
-	ec := t.estimate(ck)
-	ek := t.estimate(kk)
-	et := t.estimate(tk)
-
-	return ec, ek, et
+func (t *tracker) Restart(cluster, keyspace, table string, id int) {
+	key := t.createKey(cluster, keyspace, table, id)
+	t.completions[key] = false
 }
 
-func (t *tracker) FragmentAverage(cluster string) time.Duration {
-	_, _, tk := t.keys(cluster)
-	worktime := t.duration(tk)
-	average := int64(0)
-	completed := t.completed(tk)
+func (t *tracker) Track(cluster, keyspace, table string, id int, tt, kt, ct int) *RepairStats {
+	ck, kk, tk := t.keys(cluster, keyspace, table)
 
+	cc, ca, cp, ce := t.start(ck, ct)
+	kc, ka, kp, ke := t.start(kk, kt)
+	tc, ta, tp, te := t.start(tk, tt)
+
+	return &RepairStats{
+		Cluster:           cluster,
+		Keyspace:          keyspace,
+		Table:             table,
+		ID:                id,
+		TableTotal:        tt,
+		TableCompleted:    tc,
+		TablePercent:      tp,
+		TableAverage:      ta,
+		TableEstimate:     te,
+		KeyspaceTotal:     kt,
+		KeyspaceCompleted: kc,
+		KeyspacePercent:   kp,
+		KeyspaceAverage:   ka,
+		KeyspaceEstimate:  ke,
+		ClusterTotal:      ct,
+		ClusterCompleted:  cc,
+		ClusterPercent:    cp,
+		ClusterAverage:    ca,
+		ClusterEstimate:   ce,
+	}
+
+}
+
+func (t *tracker) average(worktime time.Duration, completed int) time.Duration {
+	average := int64(0)
 	if completed > 0 {
 		average = int64(worktime) / int64(completed)
 	}
 	return time.Duration(average)
 }
 
-// LastSucces returns Timestamp of last successful repair
-func (t *tracker) LastSuccess(cluster string) time.Time {
-	key := t.createKey(cluster)
-	s, ex := t.successes[key]
-	if !ex {
-		return time.Time{}
-	}
-	return s
-}
-
-func (t *tracker) Percentage(cluster string) (float32, float32, float32) {
-
-	ck, kk, tk := t.keys(cluster)
-
-	pc := t.percent(ck)
-	pk := t.percent(kk)
-	pt := t.percent(tk)
-
-	return pc, pk, pt
-}
-
-func (t *tracker) Restart(cluster, keyspace, table string, id int) {
-	key := t.createKey(cluster, keyspace, table, id)
-	t.completions[key] = false
-}
-
-/*
-// StartCluster sets start time of cluster repair
-func (t *tracker) StartCluster(cluster string, length int) {
-	key := t.createKey(cluster)
-	t.start(key)
-	t.length(key, length)
-}
-
-// StartKeypace sets start time of keyspace repair
-func (t *tracker) StartKeyspace(cluster, keyspace string, length int) {
-	key := t.createKey(cluster)
-	t.currents[key] = keyspace
-
-	key = t.createKey(cluster, keyspace)
-	t.start(key)
-	t.length(key, length)
-}
-
-// StartTable sets start time of table repair
-func (t *tracker) StartTable(cluster, keyspace, table string, length int) {
-	key := t.createKey(cluster, keyspace)
-	t.currents[key] = table
-
-	key = t.createKey(cluster, keyspace, table)
-	t.start(key)
-	t.length(key, length)
-}
-*/
-func (t *tracker) Total(cluster string) int {
-	ck, _, _ := t.keys(cluster)
-	return t.total(ck)
-}
-
-func (t *tracker) Track(cluster, keyspace, table string, id int, total int) {
-	ck, kk, tk := t.keys(cluster)
-	if !t.started(ck) {
-		t.start(ck)
-		t.length(ck, total)
-	}
-	if !t.started(kk) {
-		t.start(kk)
-	}
-	if !t.started(tk) {
-		t.start(tk)
-	}
-
-	key := t.createKey(cluster, keyspace, table, id)
-	t.start(key)
-}
-
-func (t *tracker) calculatePercent(key string) float32 {
-	complete := t.completed(key)
-	if complete == 0 {
-		return 0
-	}
-	return (100 * float32(complete) / float32(t.total(key)))
-}
-func (t *tracker) calculatePercents(cluster string) {
-	ck, kk, tk := t.keys(cluster)
-
-	ptk := t.calculatePercent(tk)
-	pkk := t.calculatePercent(kk) + ptk/float32(t.total(kk))
-	pck := t.calculatePercent(ck) + pkk/float32(t.total(ck))
-
-	t.percents[tk] = ptk
-	t.percents[kk] = pkk
-	t.percents[ck] = pck
-
-	if t.percent(tk) == 100 {
-		t.complete(kk)
-
-		if t.percent(kk) == 100 {
-			t.complete(ck)
-
-			if t.percent(ck) == 100 {
-				t.success(ck)
-			}
-		}
-	}
-
-}
-
 func (t *tracker) complete(key string) int {
-
 	_, ex := t.counts[key]
 	if !ex {
 		t.counts[key] = 0
@@ -200,14 +109,6 @@ func (t *tracker) createKey(vars ...interface{}) string {
 	return result
 }
 
-func (t *tracker) current(key string) string {
-	c, ex := t.currents[key]
-	if !ex {
-		log.WithError(errors.New(key)).Error("Tracked current not started") // TODO try to read from DB
-	}
-	return c
-}
-
 func (t *tracker) duration(key string) time.Duration {
 	start := t.startTime(key)
 	now := time.Now()
@@ -215,47 +116,40 @@ func (t *tracker) duration(key string) time.Duration {
 	return duration
 }
 
-func (t *tracker) estimate(key string) time.Duration {
-	percent := t.percent(key)
-	if percent == 0 {
-		return 0
-	}
-	duration := t.duration(key)
-	result := int64(duration) * int64((100-percent)/percent)
+func (t *tracker) estimate(average time.Duration, total, completed int) time.Duration {
+	result := int64(average) * int64(total-completed)
 	return time.Duration(result)
 }
 
-func (t *tracker) keys(cluster string) (string, string, string) {
+func (t *tracker) keys(cluster, keyspace, table string) (string, string, string) {
 	clusterKey := t.createKey(cluster)
-	keyspace := t.current(clusterKey)
 	keyspaceKey := t.createKey(cluster, keyspace)
-	table := t.current(keyspaceKey)
 	tableKey := t.createKey(cluster, keyspace, table)
 
 	return clusterKey, keyspaceKey, tableKey
 }
 
-func (t *tracker) length(key string, length int) {
-	t.totals[key] = length
-}
-
-func (t *tracker) percent(key string) float32 {
-	pc, ex := t.percents[key]
-	if !ex {
-		log.WithError(errors.New(key)).Error("Tracked percent not started") // TODO try to read from DB
+func (t *tracker) percent(total, completed int) float32 {
+	if completed == 0 {
+		return 0
 	}
-	return pc
+	return (100 * float32(completed) / float32(total))
+
 }
 
-func (t *tracker) start(key string) {
-	t.counts[key] = 0
-	t.percents[key] = 0
-	t.starts[key] = time.Now()
-}
-
-func (t *tracker) started(key string) bool {
+func (t *tracker) start(key string, total int) (int, time.Duration, float32, time.Duration) {
 	_, ex := t.starts[key]
-	return ex
+	if !ex {
+		t.starts[key] = time.Now()
+	}
+
+	worktime := t.duration(key)
+	completed := t.completed(key)
+	average := t.average(worktime, completed)
+	percent := t.percent(total, completed)
+	estimate := t.estimate(average, total, completed)
+
+	return completed, average, percent, estimate
 }
 
 func (t *tracker) startTime(key string) time.Time {

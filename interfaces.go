@@ -72,17 +72,9 @@ type Server interface {
 // Tracker keeps progress of repair
 type Tracker interface {
 	CompleteFragment(cluster, keyspace, table string, repair int) time.Duration
-	Estimate(cluster string) (time.Duration, time.Duration, time.Duration)
-	FragmentAverage(cluster string) time.Duration
 	IsCompleted(cluster, keyspace, table string, repair int) bool
-	LastSuccess(cluster string) time.Time
-	Percentage(cluster string) (float32, float32, float32)
 	Restart(cluster, keyspace, table string, repair int)
-	//StartCluster(string, int)
-	//StartKeyspace(string, string, int)
-	//StartTable(string, string, string, int)
-	Total(string) int
-	Track(cluster, keyspace, table string, repair, total int)
+	Track(cluster, keyspace, table string, repair, tt, kt, ct int) *RepairStats
 }
 
 // ValueReader reads position data from DB

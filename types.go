@@ -43,6 +43,7 @@ type Fragment struct {
 type Keyspace struct {
 	Name   string `yaml:"name"`
 	tables []*Table
+	total  int
 }
 
 // Navigation holds coordinates of next repair
@@ -65,20 +66,25 @@ type Repair struct {
 
 // RepairStats for logging
 type RepairStats struct {
-	Cluster            string
-	Keyspace           string
-	Table              string
-	Total              int
-	LastClusterSuccess time.Time
-	FragmentDuration   time.Duration
-	FragmentAverage    time.Duration
-	Rate               time.Duration
-	Percent            float32
-	PercentKeyspace    float32
-	PercentCluster     float32
-	Estimate           time.Duration
-	EstimateKeyspace   time.Duration
-	EstimateCluster    time.Duration
+	Cluster           string
+	Keyspace          string
+	Table             string
+	ID                int
+	TableTotal        int
+	TableCompleted    int
+	TablePercent      float32
+	TableAverage      time.Duration
+	TableEstimate     time.Duration
+	KeyspaceTotal     int
+	KeyspaceCompleted int
+	KeyspacePercent   float32
+	KeyspaceAverage   time.Duration
+	KeyspaceEstimate  time.Duration
+	ClusterTotal      int
+	ClusterCompleted  int
+	ClusterPercent    float32
+	ClusterAverage    time.Duration
+	ClusterEstimate   time.Duration
 }
 
 // RepairStatus keeps status of repair
@@ -95,6 +101,7 @@ type Table struct {
 	Slices  int     `yaml:"slices"`
 	Weight  float32 `yaml:"weight"`
 	repairs []*Repair
+	total   int
 }
 
 // Token represents cassandra key range
