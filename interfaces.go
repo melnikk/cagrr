@@ -71,10 +71,10 @@ type Server interface {
 
 // Tracker keeps progress of repair
 type Tracker interface {
-	CompleteFragment(cluster, keyspace, table string, repair int) time.Duration
+	Complete(cluster, keyspace, table string, repair int) *RepairStats
 	IsCompleted(cluster, keyspace, table string, repair int) bool
 	Restart(cluster, keyspace, table string, repair int)
-	Track(cluster, keyspace, table string, repair, tt, kt, ct int) *RepairStats
+	Start(cluster, keyspace, table string, repair, tt, kt, ct int)
 }
 
 // ValueReader reads position data from DB

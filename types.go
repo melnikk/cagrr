@@ -18,6 +18,13 @@ type Cluster struct {
 	tracker   Tracker
 }
 
+// ClusterStats for logging
+type ClusterStats struct {
+	Cluster         string
+	ClusterDuration time.Duration
+	LastSuccess     time.Time
+}
+
 // Config is a configuration file struct
 type Config struct {
 	Conn         *Connector `yaml:"conn"`
@@ -70,6 +77,7 @@ type RepairStats struct {
 	Keyspace          string
 	Table             string
 	ID                int
+	Duration          time.Duration
 	TableTotal        int
 	TableCompleted    int
 	TablePercent      float32
@@ -153,4 +161,5 @@ type tracker struct {
 	db          DB
 	durations   map[string]time.Duration
 	starts      map[string]time.Time
+	totals      map[string]int
 }

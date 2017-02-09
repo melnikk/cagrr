@@ -29,8 +29,7 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 					log.WithFields(r).Debug("Scheduling fragment")
 					jobs <- r
 
-					stats := c.tracker.Track(c.Name, k.Name, t.Name, r.ID, t.Total(), k.Total(), total)
-					log.WithFields(stats).Debug("Repair scheduled")
+					c.tracker.Start(c.Name, k.Name, t.Name, r.ID, t.Total(), k.Total(), total)
 				}
 			}
 		}

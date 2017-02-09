@@ -68,8 +68,18 @@ func (s *server) processComplete(status RepairStatus) {
 	table := repair.Table
 	id := repair.ID
 
-	duration := s.tracker.CompleteFragment(cluster, keyspace, table, id)
-	log.WithFields(repair).Info(fmt.Sprintf("Fragment completed in %s", duration))
+	stats := s.tracker.Complete(cluster, keyspace, table, id)
+	log.WithFields(stats).Debug("Fragment completed")
+
+	if stats.ClusterPercent == 100 {
+		duration := int64(stats.ClusterAverage) * int64(stats.ClusterCompleted)
+		clusterStats := &ClusterStats{
+			Cluster:         stats.Cluster,
+			ClusterDuration: time.Duration(duration),
+			LastSuccess:     time.Now(),
+		}
+		log.WithFields(clusterStats).Debug("Cluster completed")
+	}
 
 }
 
