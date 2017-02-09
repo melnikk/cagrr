@@ -78,6 +78,7 @@ type RepairStats struct {
 	Table             string
 	ID                int
 	Duration          time.Duration
+	Rate              time.Duration
 	TableTotal        int
 	TableCompleted    int
 	TablePercent      float32
@@ -151,7 +152,6 @@ type server struct {
 	mux        *http.ServeMux
 	navigation *Navigation
 	obtainer   Obtainer
-	regulator  Regulator
 	tracker    Tracker
 }
 
@@ -160,6 +160,7 @@ type tracker struct {
 	counts      map[string]int
 	db          DB
 	durations   map[string]time.Duration
+	regulator   Regulator
 	starts      map[string]time.Time
 	totals      map[string]int
 }

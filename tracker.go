@@ -6,13 +6,14 @@ import (
 )
 
 // NewTracker created new progress tracker
-func NewTracker(db DB) Tracker {
+func NewTracker(db DB, r Regulator) Tracker {
 
 	return &tracker{
 		completions: make(map[string]bool),
 		counts:      make(map[string]int),
 		db:          db,
 		durations:   make(map[string]time.Duration),
+		regulator:   r,
 		starts:      make(map[string]time.Time),
 		totals:      make(map[string]int),
 	}
@@ -28,6 +29,8 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats
 	now := time.Now()
 	duration := now.Sub(start)
 
+	rate := t.regulator.LimitRateTo(cluster, duration)
+
 	t.complete(rk, duration)
 	tt, tc, ta, tp, te := t.complete(tk, duration)
 	kt, kc, ka, kp, ke := t.complete(kk, duration)
@@ -38,6 +41,7 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats
 		Table:             table,
 		ID:                id,
 		Duration:          duration,
+		Rate:              rate,
 		TableTotal:        tt,
 		TableCompleted:    tc,
 		TablePercent:      tp,

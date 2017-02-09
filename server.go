@@ -14,10 +14,9 @@ const (
 )
 
 // NewServer initializes loops for scheduling repair jobs
-func NewServer(regulator Regulator, tracker Tracker) Server {
+func NewServer(tracker Tracker) Server {
 	s := server{
 		navigation: &Navigation{},
-		regulator:  regulator,
 		tracker:    tracker,
 	}
 	return &s
@@ -27,15 +26,6 @@ func (s *server) ServeAt(callback string) Server {
 	s.callback = callback
 	go s.startServer()
 	return s
-}
-
-func (s *server) findCluster(name string) *Cluster {
-	for i, c := range s.clusters {
-		if c.Name == name {
-			return s.clusters[i]
-		}
-	}
-	return s.clusters[0]
 }
 
 func (s *server) handleNavigate(w http.ResponseWriter, req *http.Request) {

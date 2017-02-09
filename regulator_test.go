@@ -41,7 +41,7 @@ var _ = Describe("Regulator", func() {
 				regulator.Limit(key)
 			})
 
-			Expect(runtime.Seconds()).Should(BeNumerically("~", 0.3, 0.001))
+			Expect(runtime.Seconds()).Should(BeNumerically("~", 0.3, 0.01))
 		}, 1)
 	})
 

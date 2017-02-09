@@ -31,7 +31,7 @@ var (
 // subject dependencies
 var (
 	logger  cagrr.Logger
-	repairs = make(chan *cagrr.Repair)
+	repairs chan *cagrr.Repair
 )
 
 func main() {
@@ -41,10 +41,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	repairs = make(chan *cagrr.Repair, 1)
 	database := cagrr.NewDb("/tmp/cagrr.db")
-	tracker := cagrr.NewTracker(database)
 	regulator := cagrr.NewRegulator(config.BufferLength)
-	server := cagrr.NewServer(regulator, tracker)
+	tracker := cagrr.NewTracker(database, regulator)
+	server := cagrr.NewServer(tracker)
 	fixer := cagrr.NewFixer(config.Conn)
 
 	defer database.Close()
