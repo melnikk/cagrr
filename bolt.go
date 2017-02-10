@@ -1,14 +1,14 @@
 package cagrr
 
-import "github.com/boltdb/bolt"
+import (
+	"fmt"
+	"strings"
 
-var (
-	database DB
-	//tablesNeeded = []string{clusterRepairs, currentPositions, savedPositions}
+	"github.com/boltdb/bolt"
 )
 
-// NewDb connects to DB
-func NewDb(name string) DB {
+// NewBoltDb connects to DB
+func NewBoltDb(name string) DB {
 	instance := boltDB{}
 	var err error
 	instance.db, err = bolt.Open(name, 0600, nil)
@@ -21,6 +21,10 @@ func NewDb(name string) DB {
 
 func (d *boltDB) Close() {
 	d.db.Close()
+}
+
+func (d *boltDB) CreateKey(vars ...string) string {
+	return strings.Join(vars, "_")
 }
 
 // CreateTables initializes tables needed for work
@@ -45,38 +49,34 @@ func (d *boltDB) CreateTables() error {
 	return nil
 }
 
-func (d *boltDB) ReadOrCreate(table, key, defaultValue string) string {
+func (d *boltDB) ReadOrCreate(table, key string, defaultValue interface{}) ([]byte, bool) {
 	val := d.ReadValue(table, key)
-	if val == "" {
-		d.WriteValue(table, key, defaultValue)
-		val = defaultValue
+	ex := val != nil
+	if !ex {
+		d.WriteValue(table, key, fmt.Sprintf("%s", defaultValue))
+		val = defaultValue.([]byte)
 	}
-	return val
+	return val, ex
 }
 
-func (d *boltDB) ReadValue(table, key string) string {
-	var result string
+func (d *boltDB) ReadValue(table, key string) []byte {
+	var result []byte
 	tx, err := d.db.Begin(false)
 	if err != nil {
 		log.WithError(err).Warn("Error when starting read transaction")
-		return result
+		return []byte(result)
 	}
 	defer tx.Rollback()
 
 	b := tx.Bucket([]byte(table))
 	//if b != nil {
-	result = string(b.Get([]byte(key)))
+	result = b.Get([]byte(key))
 	//}
 
 	return result
 }
 
-// SetDatabase sets package-level DB interface
-func SetDatabase(db DB) {
-	database = db
-}
-
-func (d *boltDB) WriteValue(table, key, value string) error {
+func (d *boltDB) WriteValue(table, key string, value interface{}) error {
 	tx, err := d.db.Begin(true)
 	if err != nil {
 		log.WithError(err).Warn("Error when starting write transaction")
@@ -86,7 +86,7 @@ func (d *boltDB) WriteValue(table, key, value string) error {
 
 	b, _ := tx.CreateBucketIfNotExists([]byte(table))
 
-	b.Put([]byte(key), []byte(value))
+	b.Put([]byte(key), []byte(value.(string)))
 
 	// Commit the transaction.
 	if err := tx.Commit(); err != nil {
@@ -95,8 +95,4 @@ func (d *boltDB) WriteValue(table, key, value string) error {
 	}
 
 	return nil
-}
-
-func getDatabase() DB {
-	return database
 }

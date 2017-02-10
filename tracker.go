@@ -1,21 +1,25 @@
 package cagrr
 
 import (
-	"fmt"
+	"strconv"
 	"time"
+)
+
+const (
+	completions = "completions"
+	counts      = "counts"
+	durations   = "durations"
+	starts      = "starts"
+	timeFormat  = "2006-01-02 15:04:05 -0700 -07"
+	totals      = "totals"
 )
 
 // NewTracker created new progress tracker
 func NewTracker(db DB, r Regulator) Tracker {
 
 	return &tracker{
-		completions: make(map[string]bool),
-		counts:      make(map[string]int),
-		db:          db,
-		durations:   make(map[string]time.Duration),
-		regulator:   r,
-		starts:      make(map[string]time.Time),
-		totals:      make(map[string]int),
+		db:        db,
+		regulator: r,
 	}
 }
 
@@ -23,9 +27,11 @@ func NewTracker(db DB, r Regulator) Tracker {
 func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats {
 	ck, kk, tk := t.keys(cluster, keyspace, table)
 
-	rk := t.createKey(cluster, keyspace, table, id)
+	rk := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
 
-	start := t.starts[rk]
+	startValue := string(t.db.ReadValue(starts, rk))
+	start, _ := time.Parse(timeFormat, startValue)
+
 	now := time.Now()
 	duration := now.Sub(start)
 
@@ -63,19 +69,20 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats
 
 // IsCompleted check fragment completion
 func (t *tracker) IsCompleted(cluster, keyspace, table string, id int) bool {
-	key := t.createKey(cluster, keyspace, table, id)
-	completed := t.completions[key]
-	return completed
+	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
+	completed, _ := t.db.ReadOrCreate(completions, key, "false")
+	result, _ := strconv.ParseBool(string(completed))
+	return result
 }
 
 func (t *tracker) Restart(cluster, keyspace, table string, id int) {
-	key := t.createKey(cluster, keyspace, table, id)
-	t.completions[key] = false
+	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
+	t.db.WriteValue(completions, key, "false")
 }
 
 func (t *tracker) Start(cluster, keyspace, table string, id int, tt, kt, ct int) {
 	ck, kk, tk := t.keys(cluster, keyspace, table)
-	rk := t.createKey(cluster, keyspace, table, id)
+	rk := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
 
 	t.start(ck, ct)
 	t.start(kk, kt)
@@ -94,27 +101,28 @@ func (t *tracker) average(worktime time.Duration, completed int) time.Duration {
 
 func (t *tracker) complete(key string, duration time.Duration) (int, int, time.Duration, float32, time.Duration) {
 
-	t.completions[key] = true
-	t.counts[key]++
-	t.durations[key] += duration
+	t.db.WriteValue(completions, key, "true")
+	completedValue, _ := t.db.ReadOrCreate(counts, key, "0")
+	completed, _ := strconv.Atoi(string(completedValue))
+	completed++
+	t.db.WriteValue(counts, key, strconv.Itoa(completed))
 
-	completed := t.counts[key]
-	total := t.totals[key]
-	worktime := t.durations[key]
+	worktimeValue := t.db.ReadValue(durations, key)
+	worktime, _ := time.ParseDuration(string(worktimeValue))
+	worktime += duration
+	t.db.WriteValue(durations, key, worktime.String())
+
+	total, _ := strconv.Atoi(string(t.db.ReadValue(totals, key)))
 
 	average := t.average(worktime, completed)
 	estimate := t.estimate(average, total, completed)
 	percent := t.percent(total, completed)
 
-	return total, completed, average, percent, estimate
-}
-
-func (t *tracker) createKey(vars ...interface{}) string {
-	result := "track"
-	for _, v := range vars {
-		result += fmt.Sprintf("_%s", v)
+	if percent == 100 {
+		t.db.WriteValue(completions, key, "true")
 	}
-	return result
+
+	return total, completed, average, percent, estimate
 }
 
 func (t *tracker) estimate(average time.Duration, total, completed int) time.Duration {
@@ -123,9 +131,9 @@ func (t *tracker) estimate(average time.Duration, total, completed int) time.Dur
 }
 
 func (t *tracker) keys(cluster, keyspace, table string) (string, string, string) {
-	clusterKey := t.createKey(cluster)
-	keyspaceKey := t.createKey(cluster, keyspace)
-	tableKey := t.createKey(cluster, keyspace, table)
+	clusterKey := t.db.CreateKey(cluster)
+	keyspaceKey := t.db.CreateKey(cluster, keyspace)
+	tableKey := t.db.CreateKey(cluster, keyspace, table)
 
 	return clusterKey, keyspaceKey, tableKey
 }
@@ -136,12 +144,11 @@ func (t *tracker) percent(total, completed int) float32 {
 }
 
 func (t *tracker) start(key string, total int) {
-	_, ex := t.starts[key]
+	_, ex := t.db.ReadOrCreate(starts, key, time.Now().String())
 	if !ex {
-		t.completions[key] = false
-		t.starts[key] = time.Now()
-		t.counts[key] = 0
-		t.durations[key] = time.Duration(0)
-		t.totals[key] = total
+		t.db.WriteValue(completions, key, "false")
+		t.db.WriteValue(counts, key, "0")
+		t.db.WriteValue(durations, key, "0s")
+		t.db.WriteValue(totals, key, strconv.Itoa(total))
 	}
 }

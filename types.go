@@ -4,7 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	redis "gopkg.in/redis.v5"
+
 	"github.com/boltdb/bolt"
+	"github.com/hashicorp/consul/api"
 )
 
 // Cluster contains configuration of cluster item
@@ -125,7 +128,9 @@ type TokenSet []Token
 type boltDB struct {
 	db *bolt.DB
 }
-
+type consulDB struct {
+	db *api.Client
+}
 type fixer struct {
 	runner RepairRunner
 }
@@ -138,6 +143,10 @@ type logger struct {
 type queue struct {
 	nodes []time.Duration
 	size  int
+}
+
+type redisDB struct {
+	db *redis.Client
 }
 
 type regulator struct {
@@ -156,11 +165,6 @@ type server struct {
 }
 
 type tracker struct {
-	completions map[string]bool
-	counts      map[string]int
-	db          DB
-	durations   map[string]time.Duration
-	regulator   Regulator
-	starts      map[string]time.Time
-	totals      map[string]int
+	db        DB
+	regulator Regulator
 }

@@ -3,6 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "context",
+			"revision": ""
+		},
+		{
 			"path": "get",
 			"revision": ""
 		},
@@ -23,6 +27,24 @@
 			"path": "github.com/fatih/structs",
 			"revision": "dc3312cb1a4513a366c4c9e622ad55c32df12ed3",
 			"revisionTime": "2016-08-07T23:55:29Z"
+		},
+		{
+			"checksumSHA1": "SvysJGzNxXkDOWz2FlGjbeZgwR4=",
+			"path": "github.com/hashicorp/consul/api",
+			"revision": "7e52e95c47f412eea64df8812837cf8ca32351a7",
+			"revisionTime": "2017-02-10T04:28:38Z"
+		},
+		{
+			"checksumSHA1": "Uzyon2091lmwacNsl1hCytjhHtg=",
+			"path": "github.com/hashicorp/go-cleanhttp",
+			"revision": "ad28ea4487f05916463e2423a55166280e8254b5",
+			"revisionTime": "2016-04-07T17:41:26Z"
+		},
+		{
+			"checksumSHA1": "E3Xcanc9ouQwL+CZGOUyA/+giLg=",
+			"path": "github.com/hashicorp/serf/coordinate",
+			"revision": "cb45b412ee4f9d6cc2eeb2b2b7dd0f6cfd7545c1",
+			"revisionTime": "2017-02-09T20:26:34Z"
 		},
 		{
 			"checksumSHA1": "b8ntOW4MlKN7Pik6T9uCYIpPcgI=",
@@ -51,6 +73,42 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "30237cf4eefd639b184d1f2cb77a581ea0be8947",
 			"revisionTime": "2016-11-19T15:29:01Z"
+		},
+		{
+			"checksumSHA1": "UIjYxb3qWMEPBbX7kV7fEnkMNSE=",
+			"path": "gopkg.in/redis.v5",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
+		},
+		{
+			"checksumSHA1": "MQyhe1N+NO0+uyJiEc6M2WGfb3s=",
+			"path": "gopkg.in/redis.v5/internal",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
+		},
+		{
+			"checksumSHA1": "2Ek4SixeRSKOX3mUiBMs3Aw+Guc=",
+			"path": "gopkg.in/redis.v5/internal/consistenthash",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
+		},
+		{
+			"checksumSHA1": "rJYVKcBrwYUGl7nuuusmZGrt8mY=",
+			"path": "gopkg.in/redis.v5/internal/hashtag",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
+		},
+		{
+			"checksumSHA1": "7lXkqeBKZyDLuIcKmWUn54wNL7g=",
+			"path": "gopkg.in/redis.v5/internal/pool",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
+		},
+		{
+			"checksumSHA1": "vW72YtzOfAWN0k7pyt1Ww0WpG6g=",
+			"path": "gopkg.in/redis.v5/internal/proto",
+			"revision": "2fe9c5cc0a8da9faeba3a45511a4ece8f7e37dc2",
+			"revisionTime": "2017-02-08T12:28:34Z"
 		},
 		{
 			"checksumSHA1": "12GqsW8PiRPnezDDy0v4brZrndM=",

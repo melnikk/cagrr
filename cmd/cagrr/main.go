@@ -42,9 +42,12 @@ func main() {
 	}
 
 	repairs = make(chan *cagrr.Repair, 1)
-	database := cagrr.NewDb("/tmp/cagrr.db")
+	//bolt := cagrr.NewBoltDb("/tmp/cagrr.db")
+	consul := cagrr.NewConsulDb()
+	//redis := cagrr.NewRedisDb("localhost:6379")
+	database := consul
 	regulator := cagrr.NewRegulator(config.BufferLength)
-	tracker := cagrr.NewTracker(database, regulator)
+	tracker := cagrr.NewTracker(consul, regulator)
 	server := cagrr.NewServer(tracker)
 	fixer := cagrr.NewFixer(config.Conn)
 
