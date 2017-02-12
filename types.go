@@ -6,7 +6,6 @@ import (
 
 	redis "gopkg.in/redis.v5"
 
-	"github.com/boltdb/bolt"
 	"github.com/hashicorp/consul/api"
 )
 
@@ -85,16 +84,19 @@ type RepairStats struct {
 	TableTotal        int
 	TableCompleted    int
 	TablePercent      float32
+	TableDuration     time.Duration
 	TableAverage      time.Duration
 	TableEstimate     time.Duration
 	KeyspaceTotal     int
 	KeyspaceCompleted int
 	KeyspacePercent   float32
+	KeyspaceDuration  time.Duration
 	KeyspaceAverage   time.Duration
 	KeyspaceEstimate  time.Duration
 	ClusterTotal      int
 	ClusterCompleted  int
 	ClusterPercent    float32
+	ClusterDuration   time.Duration
 	ClusterAverage    time.Duration
 	ClusterEstimate   time.Duration
 }
@@ -125,9 +127,20 @@ type Token struct {
 // TokenSet is a set of Token
 type TokenSet []Token
 
-type boltDB struct {
-	db *bolt.DB
+// TrackData of repair item
+type TrackData struct {
+	Completed bool
+	Count     int
+	Total     int
+	Percent   float32
+	Duration  time.Duration
+	Average   time.Duration
+	Estimate  time.Duration
+	Rate      time.Duration
+	Finished  time.Time
+	Started   time.Time
 }
+
 type consulDB struct {
 	db *api.Client
 }

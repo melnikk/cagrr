@@ -32,6 +32,8 @@ build:
 run:
 	go run cmd/cagrr/main.go -v debug
 
+up: clean prepare build run
+
 tar:
 	mkdir -p build/root/usr/local/bin
 	mkdir -p build/root/usr/lib/systemd/system

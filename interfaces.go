@@ -9,7 +9,7 @@ type Closer interface {
 
 // DB implements DB interface
 type DB interface {
-	CreateKey(vars ...string) string
+	CreateKey(keys ...string) string
 	ValueReader
 	ValueWriter
 	Closer
@@ -81,10 +81,9 @@ type Tracker interface {
 // ValueReader reads position data from DB
 type ValueReader interface {
 	ReadValue(string, string) []byte
-	ReadOrCreate(string, string, interface{}) ([]byte, bool)
 }
 
 // ValueWriter writes position to DB
 type ValueWriter interface {
-	WriteValue(string, string, interface{}) error
+	WriteValue(string, string, []byte) error
 }

@@ -1,6 +1,7 @@
 package cagrr
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -30,17 +31,27 @@ func (r *redisDB) Close() {
 	r.db.Close()
 }
 
-func (r *redisDB) ReadOrCreate(table, key string, value interface{}) ([]byte, bool) {
-	result, _ := r.db.GetSet(key, value).Bytes()
-	ex := result != nil
-	return result, ex
+func (r *redisDB) Delete(table, key string) {
+	r.db.Del(key)
 }
 
+func (r *redisDB) ReadTrack(table, key string) *TrackData {
+	var track TrackData
+	value := r.ReadValue(table, key)
+	json.Unmarshal(value, &track)
+	return &track
+}
 func (r *redisDB) ReadValue(table, key string) []byte {
 	result, _ := r.db.Get(key).Bytes()
 	return result
 }
 
-func (r *redisDB) WriteValue(table, key string, value interface{}) error {
+func (r *redisDB) WriteTrack(table, key string, value *TrackData) {
+	var val []byte
+	val, _ = json.Marshal(value)
+	r.WriteValue(table, key, val)
+}
+
+func (r *redisDB) WriteValue(table, key string, value []byte) error {
 	return nil
 }
