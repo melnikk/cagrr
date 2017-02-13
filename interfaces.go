@@ -73,7 +73,7 @@ type Server interface {
 // Tracker keeps progress of repair
 type Tracker interface {
 	Complete(cluster, keyspace, table string, repair int) *RepairStats
-	IsCompleted(cluster, keyspace, table string, repair int) bool
+	IsCompleted(cluster, keyspace, table string, repair int, threshold time.Duration) bool
 	Restart(cluster, keyspace, table string, repair int)
 	Start(cluster, keyspace, table string, repair, tt, kt, ct int)
 }

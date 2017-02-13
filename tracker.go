@@ -75,12 +75,12 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats
 }
 
 // IsCompleted check fragment completion
-func (t *tracker) IsCompleted(cluster, keyspace, table string, id int) bool {
+func (t *tracker) IsCompleted(cluster, keyspace, table string, id int, threshold time.Duration) bool {
 	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
 
 	track := t.readTrack(key)
 
-	return track.IsRepaired()
+	return track.IsRepaired(threshold)
 }
 
 func (t *tracker) Restart(cluster, keyspace, table string, id int) {

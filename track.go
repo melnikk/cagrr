@@ -15,7 +15,7 @@ func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, f
 	t.Estimate = t.estimate(t.Average)
 	t.Percent = t.percent()
 
-	if t.Percent == 100 {
+	if t.Percent >= 100 {
 		t.Completed = true
 		t.Started = time.Time{}
 		t.Finished = time.Now()
@@ -24,10 +24,10 @@ func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, f
 }
 
 // IsRepaired is check for repair completeness
-func (t *TrackData) IsRepaired() bool {
+func (t *TrackData) IsRepaired(threshold time.Duration) bool {
 	isCompleted := t.Completed
 	isScheduled := !t.IsNew()
-	isNotSpoiled := !t.IsSpoiled(time.Duration(30 * time.Second))
+	isNotSpoiled := !t.IsSpoiled(threshold)
 	return isScheduled && isCompleted && isNotSpoiled
 }
 
@@ -49,10 +49,10 @@ func (t *TrackData) IsSpoiled(threshold time.Duration) bool {
 func (t *TrackData) Start(total int) {
 	if t.IsNew() {
 		t.Started = time.Now()
-		t.Completed = false
 		t.Count = 0
 		t.Total = total
 	}
+	t.Completed = false
 }
 
 func (t *TrackData) average() time.Duration {

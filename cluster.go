@@ -20,8 +20,9 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 
 				for _, r := range t.Repairs() {
 
-					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID) {
+					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID, c.interval()) {
 						log.WithFields(r).Debug("Repair already completed")
+						c.tracker.Complete(c.Name, k.Name, t.Name, r.ID)
 						continue
 					}
 
@@ -55,6 +56,14 @@ func (c *Cluster) RegulateWith(r Regulator) Scheduler {
 func (c *Cluster) TrackIn(t Tracker) Scheduler {
 	c.tracker = t
 	return c
+}
+func (c *Cluster) interval() time.Duration {
+	duration, err := time.ParseDuration(c.Interval)
+	if err != nil {
+		log.WithFields(c).WithError(err).Warn("Duration parsing error")
+		duration = week
+	}
+	return duration
 }
 
 func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
@@ -103,11 +112,7 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 }
 
 func (c *Cluster) sleep() {
-	duration, err := time.ParseDuration(c.Interval)
-	if err != nil {
-		log.WithFields(c).WithError(err).Warn("Duration parsing error")
-		duration = week
-	}
+	duration := c.interval()
 	log.WithFields(c).Debug(fmt.Sprintf("Cluster scheduled. Going to sleep for: %s", duration))
 	time.Sleep(duration)
 }
