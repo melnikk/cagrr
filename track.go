@@ -5,9 +5,8 @@ import "time"
 // CheckCompletion of repair
 func (t *TrackData) CheckCompletion() {
 	t.Percent = t.percent()
-	if t.Percent >= 100 {
+	if t.Percent == 100 {
 		t.Completed = true
-		t.Started = time.Time{}
 		t.Finished = time.Now()
 	}
 }
@@ -29,10 +28,7 @@ func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, f
 
 // IsRepaired is check for repair completeness
 func (t *TrackData) IsRepaired(threshold time.Duration) bool {
-	isCompleted := t.Completed
-	isScheduled := !t.IsNew()
-	isNotSpoiled := !t.IsSpoiled(threshold)
-	return isScheduled && isCompleted && isNotSpoiled
+	return t.Completed && !t.IsSpoiled(threshold)
 }
 
 // IsNew object
@@ -44,8 +40,8 @@ func (t *TrackData) IsNew() bool {
 // IsSpoiled checks that repair stinks
 func (t *TrackData) IsSpoiled(threshold time.Duration) bool {
 	now := time.Now()
-	start := t.Started
-	duration := now.Sub(start)
+	finish := t.Finished
+	duration := now.Sub(finish)
 	return duration > threshold
 }
 
@@ -84,5 +80,4 @@ func (t *TrackData) estimate(average time.Duration) time.Duration {
 
 func (t *TrackData) percent() float32 {
 	return (100 * float32(t.Count) / float32(t.Total))
-
 }
