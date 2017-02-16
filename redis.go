@@ -35,8 +35,8 @@ func (r *redisDB) Delete(table, key string) {
 	r.db.Del(key)
 }
 
-func (r *redisDB) ReadTrack(table, key string) *TrackData {
-	var track TrackData
+func (r *redisDB) ReadTrack(table, key string) *Track {
+	var track Track
 	value := r.ReadValue(table, key)
 	json.Unmarshal(value, &track)
 	return &track
@@ -46,7 +46,7 @@ func (r *redisDB) ReadValue(table, key string) []byte {
 	return result
 }
 
-func (r *redisDB) WriteTrack(table, key string, value *TrackData) {
+func (r *redisDB) WriteTrack(table, key string, value *Track) {
 	var val []byte
 	val, _ = json.Marshal(value)
 	r.WriteValue(table, key, val)

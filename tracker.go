@@ -127,14 +127,14 @@ func (t *tracker) StartTable(cluster, keyspace, table string, total int) {
 	t.start(key, total)
 }
 
-func (t *tracker) readTrack(key string) *TrackData {
-	var track TrackData
+func (t *tracker) readTrack(key string) *Track {
+	var track Track
 	value := t.db.ReadValue(tableName, key)
 	json.Unmarshal(value, &track)
 	return &track
 }
 
-func (t *tracker) writeTrack(key string, value *TrackData) {
+func (t *tracker) writeTrack(key string, value *Track) {
 	val, err := json.Marshal(value)
 	if err != nil {
 		panic(err)

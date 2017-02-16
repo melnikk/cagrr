@@ -127,8 +127,8 @@ type Token struct {
 // TokenSet is a set of Token
 type TokenSet []Token
 
-// TrackData of repair item
-type TrackData struct {
+// Track of repair item
+type Track struct {
 	Completed bool
 	Count     int
 	Total     int

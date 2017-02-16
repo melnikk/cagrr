@@ -1,0 +1,85 @@
+package cagrr_test
+
+import (
+	"time"
+
+	. "github.com/skbkontur/cagrr"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
+
+var _ = Describe("Track", func() {
+	var track *Track
+	BeforeEach(func() {
+		track = &Track{}
+	})
+
+	It("should be new", func() {
+		isNew := track.IsNew()
+
+		Expect(isNew).To(Equal(true))
+	})
+
+	Context("started repairs", func() {
+		BeforeEach(func() {
+			track.Start(5)
+		})
+
+		It("shouldn't be new", func() {
+			isNew := track.IsNew()
+			Expect(isNew).To(Equal(false))
+		})
+
+		Context("completion", func() {
+			It("should increment percent", func() {
+				track.Complete(time.Duration(0))
+				Expect(track.Percent).To(BeNumerically("==", 20))
+				track.Complete(time.Duration(0))
+				Expect(track.Percent).To(BeNumerically("==", 40))
+				track.Complete(time.Duration(0))
+				Expect(track.Percent).To(BeNumerically("==", 60))
+				track.Complete(time.Duration(0))
+				Expect(track.Percent).To(BeNumerically("==", 80))
+				track.Complete(time.Duration(0))
+				Expect(track.Percent).To(BeNumerically("==", 100))
+			})
+		})
+		Context("skipping", func() {
+			It("should increment percent", func() {
+				track.Skip()
+				Expect(track.Percent).To(BeNumerically("==", 20))
+				track.Skip()
+				Expect(track.Percent).To(BeNumerically("==", 40))
+				track.Skip()
+				Expect(track.Percent).To(BeNumerically("==", 60))
+				track.Skip()
+				Expect(track.Percent).To(BeNumerically("==", 80))
+				track.Skip()
+				Expect(track.Percent).To(BeNumerically("==", 100))
+			})
+		})
+		Context("completed", func() {
+			BeforeEach(func() {
+				track.Start(5)
+				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0))
+			})
+			It("should be repaired", func() {
+				isRepaired := track.IsRepaired(time.Second * 1000)
+				Expect(isRepaired).To(BeTrue())
+			})
+
+			It("should restart", func() {
+				track.Restart()
+				isRepaired := track.IsRepaired(time.Second * 1000)
+				Expect(isRepaired).To(BeFalse())
+			})
+
+		})
+
+	})
+})

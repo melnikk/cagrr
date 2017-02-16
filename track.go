@@ -3,7 +3,7 @@ package cagrr
 import "time"
 
 // CheckCompletion of repair
-func (t *TrackData) CheckCompletion() {
+func (t *Track) CheckCompletion() {
 	t.Percent = t.percent()
 	if t.Percent == 100 {
 		t.Completed = true
@@ -12,7 +12,7 @@ func (t *TrackData) CheckCompletion() {
 }
 
 // Complete repair fragment
-func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, float32, time.Duration, time.Duration) {
+func (t *Track) Complete(duration time.Duration) (int, int, time.Duration, float32, time.Duration, time.Duration) {
 	start := t.Started
 	now := time.Now()
 
@@ -27,18 +27,18 @@ func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, f
 }
 
 // IsRepaired is check for repair completeness
-func (t *TrackData) IsRepaired(threshold time.Duration) bool {
+func (t *Track) IsRepaired(threshold time.Duration) bool {
 	return t.Completed && !t.IsSpoiled(threshold)
 }
 
 // IsNew object
-func (t *TrackData) IsNew() bool {
+func (t *Track) IsNew() bool {
 	start := t.Started
 	return start == time.Time{}
 }
 
 // IsSpoiled checks that repair stinks
-func (t *TrackData) IsSpoiled(threshold time.Duration) bool {
+func (t *Track) IsSpoiled(threshold time.Duration) bool {
 	now := time.Now()
 	finish := t.Finished
 	duration := now.Sub(finish)
@@ -46,26 +46,26 @@ func (t *TrackData) IsSpoiled(threshold time.Duration) bool {
 }
 
 // Restart track
-func (t *TrackData) Restart() {
+func (t *Track) Restart() {
 	t.Count = 0
 	t.Completed = false
 }
 
 // Skip track
-func (t *TrackData) Skip() {
+func (t *Track) Skip() {
 	t.Count++
 	t.CheckCompletion()
 }
 
 // Start track
-func (t *TrackData) Start(total int) {
+func (t *Track) Start(total int) {
 	t.Started = time.Now()
 	t.Count = 0
 	t.Total = total
 	t.Completed = false
 }
 
-func (t *TrackData) average() time.Duration {
+func (t *Track) average() time.Duration {
 	average := int64(0)
 	if t.Count > 0 {
 		average = int64(t.Duration) / int64(t.Count)
@@ -73,11 +73,11 @@ func (t *TrackData) average() time.Duration {
 	return time.Duration(average)
 }
 
-func (t *TrackData) estimate(average time.Duration) time.Duration {
+func (t *Track) estimate(average time.Duration) time.Duration {
 	result := int64(average) * int64(t.Total-t.Count)
 	return time.Duration(result)
 }
 
-func (t *TrackData) percent() float32 {
+func (t *Track) percent() float32 {
 	return (100 * float32(t.Count) / float32(t.Total))
 }
