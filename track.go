@@ -2,24 +2,28 @@ package cagrr
 
 import "time"
 
-// Complete repair fragment
-func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, float32, time.Duration, time.Duration) {
-	start := t.Started
-	now := time.Now()
-	t.Duration = now.Sub(start)
-
-	t.Count++
-	t.Duration += duration
-
-	t.Average = t.average()
-	t.Estimate = t.estimate(t.Average)
+// CheckCompletion of repair
+func (t *TrackData) CheckCompletion() {
 	t.Percent = t.percent()
-
 	if t.Percent >= 100 {
 		t.Completed = true
 		t.Started = time.Time{}
 		t.Finished = time.Now()
 	}
+}
+
+// Complete repair fragment
+func (t *TrackData) Complete(duration time.Duration) (int, int, time.Duration, float32, time.Duration, time.Duration) {
+	start := t.Started
+	now := time.Now()
+
+	t.Count++
+	t.Duration = now.Sub(start) + duration
+	t.Average = t.average()
+	t.Estimate = t.estimate(t.Average)
+
+	t.CheckCompletion()
+
 	return t.Total, t.Count, t.Average, t.Percent, t.Estimate, t.Duration
 }
 
@@ -45,13 +49,23 @@ func (t *TrackData) IsSpoiled(threshold time.Duration) bool {
 	return duration > threshold
 }
 
+// Restart track
+func (t *TrackData) Restart() {
+	t.Count = 0
+	t.Completed = false
+}
+
+// Skip track
+func (t *TrackData) Skip() {
+	t.Count++
+	t.CheckCompletion()
+}
+
 // Start track
 func (t *TrackData) Start(total int) {
-	if t.IsNew() {
-		t.Started = time.Now()
-		t.Count = 0
-		t.Total = total
-	}
+	t.Started = time.Now()
+	t.Count = 0
+	t.Total = total
 	t.Completed = false
 }
 

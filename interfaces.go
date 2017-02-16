@@ -75,7 +75,11 @@ type Tracker interface {
 	Complete(cluster, keyspace, table string, repair int) *RepairStats
 	IsCompleted(cluster, keyspace, table string, repair int, threshold time.Duration) bool
 	Restart(cluster, keyspace, table string, repair int)
-	Start(cluster, keyspace, table string, repair, tt, kt, ct int)
+	Skip(cluster, keyspace, table string, repair int)
+	Start(cluster, keyspace, table string, repair int)
+	StartTable(cluster, keyspace, table string, total int)
+	StartKeyspace(cluster, keyspace string, total int)
+	StartCluster(cluster string, total int)
 }
 
 // ValueReader reads position data from DB

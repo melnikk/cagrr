@@ -10,28 +10,29 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 
 	for {
 		log.WithFields(c).Debug("Starting cluster")
-
 		keyspaces, total := c.obtainKeyspaces()
+		c.tracker.StartCluster(c.Name, total)
+
 		for _, k := range keyspaces {
 			log.WithFields(k).Debug("Starting keyspace")
+			c.tracker.StartKeyspace(c.Name, k.Name, k.Total())
 
 			for _, t := range k.Tables() {
 				log.WithFields(t).Debug("Starting table")
+				c.tracker.StartTable(c.Name, k.Name, t.Name, t.Total())
 
 				for _, r := range t.Repairs() {
 
 					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID, c.interval()) {
 						log.WithFields(r).Debug("Repair already completed")
-						c.tracker.Complete(c.Name, k.Name, t.Name, r.ID)
+						c.tracker.Skip(c.Name, k.Name, t.Name, r.ID)
 						continue
 					}
 
-					c.regulator.Limit(c.Name)
-
 					log.WithFields(r).Debug("Scheduling fragment")
 					jobs <- r
-
-					c.tracker.Start(c.Name, k.Name, t.Name, r.ID, t.Total(), k.Total(), total)
+					c.tracker.Start(c.Name, k.Name, t.Name, r.ID)
+					c.regulator.Limit(c.Name)
 				}
 			}
 		}

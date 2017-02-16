@@ -86,20 +86,45 @@ func (t *tracker) IsCompleted(cluster, keyspace, table string, id int, threshold
 func (t *tracker) Restart(cluster, keyspace, table string, id int) {
 	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
 	track := t.readTrack(key)
-	if !track.IsNew() {
-		track.Completed = false
-	}
+	track.Restart()
 	t.writeTrack(key, track)
 }
 
-func (t *tracker) Start(cluster, keyspace, table string, id int, tt, kt, ct int) {
-	ck, kk, tk, rk := t.keys(cluster, keyspace, table, id)
+func (t *tracker) Skip(cluster, keyspace, table string, id int) {
 
-	t.start(rk, 1)
-	t.start(tk, tt)
-	t.start(kk, kt)
-	t.start(ck, ct)
+	ck, kk, tk, _ := t.keys(cluster, keyspace, table, id)
 
+	ct := t.readTrack(ck)
+	kt := t.readTrack(kk)
+	tt := t.readTrack(tk)
+
+	ct.Skip()
+	kt.Skip()
+	tt.Skip()
+
+	t.writeTrack(ck, ct)
+	t.writeTrack(kk, kt)
+	t.writeTrack(tk, tt)
+}
+
+func (t *tracker) Start(cluster, keyspace, table string, id int) {
+	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
+	t.start(key, 1)
+}
+
+func (t *tracker) StartCluster(cluster string, total int) {
+	key := t.db.CreateKey(cluster)
+	t.start(key, total)
+}
+
+func (t *tracker) StartKeyspace(cluster, keyspace string, total int) {
+	key := t.db.CreateKey(cluster, keyspace)
+	t.start(key, total)
+}
+
+func (t *tracker) StartTable(cluster, keyspace, table string, total int) {
+	key := t.db.CreateKey(cluster, keyspace, table)
+	t.start(key, total)
 }
 
 func (t *tracker) readTrack(key string) *TrackData {
