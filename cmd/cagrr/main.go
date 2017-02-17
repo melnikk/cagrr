@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	repairs = make(chan *cagrr.Repair, len(config.Clusters))
+	repairs = make(chan *cagrr.Repair, len(config.Clusters)*2)
 	//bolt := cagrr.NewBoltDb("/tmp/cagrr.db")
 	consul := cagrr.NewConsulDb()
 	//redis := cagrr.NewRedisDb("localhost:6379")
