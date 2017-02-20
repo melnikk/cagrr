@@ -55,13 +55,6 @@ type Keyspace struct {
 	total  int
 }
 
-// Navigation holds coordinates of next repair
-type Navigation struct {
-	Cluster  string
-	Keyspace string
-	Table    string
-}
-
 // Repair object
 type Repair struct {
 	ID       int    `json:"id"`
@@ -168,13 +161,12 @@ type regulator struct {
 }
 
 type server struct {
-	callback   string
-	clusters   []*Cluster
-	jobs       chan<- *Repair
-	mux        *http.ServeMux
-	navigation *Navigation
-	obtainer   Obtainer
-	tracker    Tracker
+	callback string
+	clusters []*Cluster
+	jobs     chan<- *Repair
+	mux      *http.ServeMux
+	obtainer Obtainer
+	tracker  Tracker
 }
 
 type tracker struct {

@@ -1,6 +1,8 @@
 package cagrr
 
 import (
+	"fmt"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/fatih/structs"
 	"github.com/rifflock/lfshook"
@@ -30,7 +32,12 @@ func NewLogger(verb, filename string) Logger {
 }
 
 func (l logger) WithFields(str interface{}) Logger {
-	l.fields = structs.Map(str)
+	strmap := structs.Map(str)
+	result := make(map[string]interface{})
+	for k, v := range strmap {
+		result[k] = fmt.Sprintf("%v", v)
+	}
+	l.fields = result
 	return l
 }
 func (l logger) WithError(err error) Logger {
