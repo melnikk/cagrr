@@ -16,6 +16,9 @@ func (q *queue) Average() time.Duration {
 	for _, node := range q.nodes {
 		sum = sum + int64(node)
 	}
+	if sum == 0 {
+		return time.Second
+	}
 	result := sum / int64(q.size)
 	return time.Duration(result)
 }
