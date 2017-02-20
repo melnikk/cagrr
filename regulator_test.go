@@ -20,8 +20,8 @@ var _ = Describe("Regulator", func() {
 		BeforeEach(func() {
 			key = "queue"
 		})
-		It("should return 0 value when no queue", func() {
-			Expect(regulator.Rate(key)).To(Equal(time.Duration(0)))
+		It("should return 1s value when no queue", func() {
+			Expect(regulator.Rate(key)).To(Equal(time.Second))
 		})
 
 		It("should average limits", func() {

@@ -17,12 +17,8 @@ var _ = Describe("Queue", func() {
 			queue = NewQueue(5)
 		})
 
-		It("should return 0 value when empty", func() {
-			Expect(queue.Average()).To(Equal(time.Duration(0)))
-		})
-
-		It("should return string value when cast", func() {
-			Expect(queue.Average()).To(Equal(time.Duration(0)))
+		It("should return 1s value when empty", func() {
+			Expect(queue.Average()).To(Equal(time.Second))
 		})
 
 		It("should return average value with only one element", func() {
