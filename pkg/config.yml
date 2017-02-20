@@ -4,7 +4,7 @@ conn:
   host: localhost
   port: 8080
 clusters:
-  - name: Test cluster
-    interval: 160h
+  - name: DevCluster
+    interval: 1h
     keyspaces:
       - name: testspace
