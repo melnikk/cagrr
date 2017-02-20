@@ -34,6 +34,10 @@ var (
 	repairs chan *cagrr.Repair
 )
 
+const (
+	overrate = 2
+)
+
 func main() {
 	config, err := cagrr.ReadConfiguration(opts.ConfigFile)
 	if err != nil {
@@ -41,8 +45,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	repairs = make(chan *cagrr.Repair, len(config.Clusters)*2)
-	//bolt := cagrr.NewBoltDb("/tmp/cagrr.db")
+	repairs = make(chan *cagrr.Repair, len(config.Clusters)*overrate)
 	consul := cagrr.NewConsulDb()
 	//redis := cagrr.NewRedisDb("localhost:6379")
 	database := consul
