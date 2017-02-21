@@ -18,7 +18,6 @@ type Cluster struct {
 	Host      string
 	Port      int
 	done      chan bool
-	obtainer  Obtainer
 	regulator Regulator
 	tracker   Tracker
 }
@@ -133,9 +132,6 @@ type Track struct {
 
 type consulDB struct {
 	db *api.Client
-}
-type fixer struct {
-	runner RepairRunner
 }
 
 type logger struct {

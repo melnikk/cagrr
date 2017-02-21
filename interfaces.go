@@ -23,11 +23,6 @@ type DurationQueue interface {
 	Average() time.Duration
 }
 
-// Fixer starts repair cycle
-type Fixer interface {
-	Fix(jobs <-chan *Repair)
-}
-
 // Logger logs messages
 type Logger interface {
 	WithError(err error) Logger
@@ -39,12 +34,6 @@ type Logger interface {
 	Info(message interface{}) Logger
 }
 
-// Obtainer gets info about fragment from Cajrr
-type Obtainer interface {
-	ObtainTables(cluster, keyspace string) ([]*Table, error)
-	ObtainFragments(cluster, keyspace string, slices int) ([]*Fragment, error)
-}
-
 // Regulator moderates the process
 type Regulator interface {
 	LimitRateTo(key string, duration time.Duration) time.Duration
@@ -52,15 +41,10 @@ type Regulator interface {
 	Rate(key string) time.Duration
 }
 
-// RepairRunner starts fragment repair via Cajrr
-type RepairRunner interface {
-	RunRepair(repair *Repair) error
-}
-
 // Scheduler creates jobs in time
 type Scheduler interface {
 	RegulateWith(Regulator) Scheduler
-	Schedule(chan *Repair)
+	Schedule()
 	TrackIn(Tracker) Scheduler
 	Until(chan bool) Scheduler
 }

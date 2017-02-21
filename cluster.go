@@ -9,17 +9,6 @@ import (
 	"time"
 )
 
-// Fix repairs from channel
-func (c *Cluster) Fix(jobs <-chan *Repair) {
-	log.WithFields(c).Debug("Starting fix loop")
-	for job := range jobs {
-		err := c.RunRepair(job)
-		if err != nil {
-			log.WithError(err).WithFields(job).Warn("Fail to start job")
-		}
-	}
-}
-
 // RegulateWith given rate limiter
 func (c *Cluster) RegulateWith(r Regulator) Scheduler {
 	c.regulator = r
@@ -30,7 +19,7 @@ func (c *Cluster) RegulateWith(r Regulator) Scheduler {
 func (c *Cluster) RunRepair(repair *Repair) error {
 	url := fmt.Sprintf("http://%s:%d/repair", c.Host, c.Port)
 
-	log.WithFields(repair).Info("Starting repair job")
+	log.WithFields(repair).Info("Starting repair")
 
 	buf, _ := json.Marshal(repair)
 	body := bytes.NewBuffer(buf)
@@ -38,7 +27,7 @@ func (c *Cluster) RunRepair(repair *Repair) error {
 	if res != nil {
 		defer res.Body.Close()
 		if res.StatusCode != 200 {
-			log.WithError(err).WithFields(repair).Error("Fail to run repair")
+			log.WithError(err).WithFields(repair).Error("Fail to start repair")
 		}
 	}
 
@@ -47,7 +36,7 @@ func (c *Cluster) RunRepair(repair *Repair) error {
 }
 
 // Schedule cluster repair
-func (c *Cluster) Schedule(jobs chan *Repair) {
+func (c *Cluster) Schedule() {
 
 	for {
 		log.WithFields(c).Debug("Starting cluster")
@@ -69,10 +58,8 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 						c.tracker.Skip(c.Name, k.Name, t.Name, r.ID)
 						continue
 					}
-
-					log.WithFields(r).Debug("Scheduling fragment")
-					jobs <- r
 					c.tracker.Start(c.Name, k.Name, t.Name, r.ID)
+					c.RunRepair(r)
 					c.regulator.Limit(c.Name)
 				}
 			}
@@ -93,6 +80,25 @@ func (c *Cluster) Until(done chan bool) Scheduler {
 	c.done = done
 	return c
 }
+
+func (c *Cluster) fragments(keyspace string, slices int) ([]*Fragment, error) {
+	tokens, err := c.tokens(keyspace, slices)
+	if err != nil {
+		log.WithError(err).Error("Token obtain error")
+		return nil, err
+	}
+
+	count := len(tokens) * slices
+	frags := make([]*Fragment, 0, count)
+	for _, token := range tokens {
+		for _, frag := range token.Ranges {
+			fragLink := frag
+			frags = append(frags, &fragLink)
+		}
+	}
+	return frags, nil
+}
+
 func (c *Cluster) interval() time.Duration {
 	duration, err := time.ParseDuration(c.Interval)
 	if err != nil {
@@ -147,31 +153,6 @@ func (c *Cluster) keyspaces() ([]*Keyspace, int) {
 	return result, total
 }
 
-func (c *Cluster) sleep() {
-	duration := c.interval()
-	log.WithFields(c).Debug(fmt.Sprintf("Cluster scheduled. Going to sleep for: %s", duration))
-	time.Sleep(duration)
-}
-
-func (c *Cluster) fragments(keyspace string, slices int) ([]*Fragment, error) {
-	tokens, err := c.tokens(keyspace, slices)
-	if err != nil {
-		log.WithError(err).Error("Token obtain error")
-		return nil, err
-	}
-
-	count := len(tokens) * slices
-	frags := make([]*Fragment, 0, count)
-	for _, token := range tokens {
-		for _, frag := range token.Ranges {
-			fragLink := frag
-			frags = append(frags, &fragLink)
-		}
-	}
-	return frags, nil
-}
-
-// Tables returns list of column family in clusters keyspace
 func (c *Cluster) tables(keyspace string) ([]*Table, error) {
 	var result []*Table
 	url := fmt.Sprintf("http://%s:%d/tables/%s", c.Host, c.Port, keyspace)
@@ -209,4 +190,10 @@ func (c *Cluster) tokens(keyspace string, slices int) (TokenSet, error) {
 		err = json.Unmarshal(response, &tokens)
 	}
 	return tokens, err
+}
+
+func (c *Cluster) sleep() {
+	duration := c.interval()
+	log.WithFields(c).Debug(fmt.Sprintf("Cluster scheduled. Going to sleep for: %s", duration))
+	time.Sleep(duration)
 }

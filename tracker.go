@@ -136,10 +136,7 @@ func (t *tracker) readTrack(key string) *Track {
 }
 
 func (t *tracker) writeTrack(key string, value *Track) {
-	val, err := json.Marshal(value)
-	if err != nil {
-		panic(err)
-	}
+	val, _ := json.Marshal(value)
 	t.db.WriteValue(tableName, key, val)
 }
 

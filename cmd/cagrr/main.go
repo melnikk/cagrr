@@ -30,12 +30,7 @@ var (
 
 // subject dependencies
 var (
-	logger  cagrr.Logger
-	repairs chan *cagrr.Repair
-)
-
-const (
-	overrate = 2
+	logger cagrr.Logger
 )
 
 func main() {
@@ -45,7 +40,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	repairs = make(chan *cagrr.Repair, len(config.Clusters)*overrate)
 	consul := cagrr.NewConsulDb()
 	//redis := cagrr.NewRedisDb("localhost:6379")
 	database := consul
@@ -63,9 +57,7 @@ func main() {
 			RegulateWith(regulator).
 			TrackIn(tracker).
 			Until(done).
-			Schedule(repairs)
-
-		go cluster.Fix(repairs)
+			Schedule()
 	}
 	<-done
 }
