@@ -1,9 +1,8 @@
 package cagrr
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
+	"time"
 
 	redis "gopkg.in/redis.v5"
 )
@@ -18,8 +17,7 @@ func NewRedisDb(addr, password string, db int) DB {
 	})
 
 	pong, err := instance.db.Ping().Result()
-	fmt.Println(pong, err)
-
+	log.WithError(err).Info(pong)
 	return instance
 }
 
@@ -35,23 +33,12 @@ func (r *redisDB) Delete(table, key string) {
 	r.db.Del(key)
 }
 
-func (r *redisDB) ReadTrack(table, key string) *Track {
-	var track Track
-	value := r.ReadValue(table, key)
-	json.Unmarshal(value, &track)
-	return &track
-}
 func (r *redisDB) ReadValue(table, key string) []byte {
 	result, _ := r.db.Get(key).Bytes()
 	return result
 }
 
-func (r *redisDB) WriteTrack(table, key string, value *Track) {
-	var val []byte
-	val, _ = json.Marshal(value)
-	r.WriteValue(table, key, val)
-}
-
 func (r *redisDB) WriteValue(table, key string, value []byte) error {
-	return nil
+	status := r.db.Set(key, string(value), time.Second)
+	return status.Err()
 }

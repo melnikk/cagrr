@@ -1,12 +1,15 @@
 VERSION := $(shell git describe --always --tags --abbrev=0 | tail -c +2)
 RELEASE := $(shell git describe --always --tags | awk -F- '{ if ($$2) dot="."} END { printf "1%s%s%s%s\n",dot,$$2,dot,$$3}')
 VENDOR := "SKB Kontur"
-URL := "https://github.com/skbkontur/cagrr"
 LICENSE := "BSD"
+URL := "https://github.com/skbkontur/cagrr"
 
 default: clean prepare test build packages
 
 prepare:
+	sudo apt-get -qq update
+	sudo apt-get install -y rpm ruby-dev gcc make
+	gem install fpm
 	go get -v github.com/modocache/gover
 	go get -v golang.org/x/tools/cmd/cover
 	go get -v github.com/mattn/goveralls

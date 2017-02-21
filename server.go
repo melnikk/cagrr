@@ -39,7 +39,6 @@ func (s *server) handleRepairStatus(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *server) processComplete(status RepairStatus) {
-	log.WithFields(status).Debug("Status received")
 	repair := &status.Repair
 	cluster := repair.Cluster
 	keyspace := repair.Keyspace
@@ -47,7 +46,7 @@ func (s *server) processComplete(status RepairStatus) {
 	id := repair.ID
 
 	stats := s.tracker.Complete(cluster, keyspace, table, id)
-	log.WithFields(stats).Debug("Fragment completed")
+	log.WithFields(stats).Info(status.Message)
 
 	if stats.ClusterPercent == 100 {
 		duration := int64(stats.ClusterAverage) * int64(stats.ClusterCompleted)
@@ -56,7 +55,7 @@ func (s *server) processComplete(status RepairStatus) {
 			ClusterDuration: time.Duration(duration),
 			LastSuccess:     time.Now(),
 		}
-		log.WithFields(clusterStats).Debug("Cluster completed")
+		log.WithFields(clusterStats).Info("Cluster completed")
 	}
 
 }

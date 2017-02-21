@@ -16,9 +16,7 @@ var _ = Describe("Track", func() {
 	})
 
 	It("should be new", func() {
-		isNew := track.IsNew()
-
-		Expect(isNew).To(Equal(true))
+		Expect(track.IsNew()).To(BeTrue())
 	})
 
 	Context("started repairs", func() {
@@ -27,8 +25,7 @@ var _ = Describe("Track", func() {
 		})
 
 		It("shouldn't be new", func() {
-			isNew := track.IsNew()
-			Expect(isNew).To(Equal(false))
+			Expect(track.IsNew()).To(BeFalse())
 		})
 
 		Context("completion", func() {
