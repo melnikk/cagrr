@@ -1,16 +1,57 @@
 package cagrr
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 )
+
+// Fix repairs from channel
+func (c *Cluster) Fix(jobs <-chan *Repair) {
+	log.WithFields(c).Debug("Starting fix loop")
+	for job := range jobs {
+		err := c.RunRepair(job)
+		if err != nil {
+			log.WithError(err).WithFields(job).Warn("Fail to start job")
+		}
+	}
+}
+
+// RegulateWith given rate limiter
+func (c *Cluster) RegulateWith(r Regulator) Scheduler {
+	c.regulator = r
+	return c
+}
+
+// RunRepair runs fragment repair
+func (c *Cluster) RunRepair(repair *Repair) error {
+	url := fmt.Sprintf("http://%s:%d/repair", c.Host, c.Port)
+
+	log.WithFields(repair).Info("Starting repair job")
+
+	buf, _ := json.Marshal(repair)
+	body := bytes.NewBuffer(buf)
+	res, err := http.Post(url, "application/json", body)
+	if res != nil {
+		defer res.Body.Close()
+		if res.StatusCode != 200 {
+			log.WithError(err).WithFields(repair).Error("Fail to run repair")
+		}
+	}
+
+	return err
+
+}
 
 // Schedule cluster repair
 func (c *Cluster) Schedule(jobs chan *Repair) {
 
 	for {
 		log.WithFields(c).Debug("Starting cluster")
-		keyspaces, total := c.obtainKeyspaces()
+		keyspaces, total := c.keyspaces()
 		c.tracker.StartCluster(c.Name, total)
 
 		for _, k := range keyspaces {
@@ -41,21 +82,15 @@ func (c *Cluster) Schedule(jobs chan *Repair) {
 	}
 }
 
-// ObtainBy given obtainer
-func (c *Cluster) ObtainBy(o Obtainer) Scheduler {
-	c.obtainer = o
-	return c
-}
-
-// RegulateWith given rate limiter
-func (c *Cluster) RegulateWith(r Regulator) Scheduler {
-	c.regulator = r
-	return c
-}
-
 // TrackIn given tracker
 func (c *Cluster) TrackIn(t Tracker) Scheduler {
 	c.tracker = t
+	return c
+}
+
+// Until sets chan for done event
+func (c *Cluster) Until(done chan bool) Scheduler {
+	c.done = done
 	return c
 }
 func (c *Cluster) interval() time.Duration {
@@ -67,12 +102,12 @@ func (c *Cluster) interval() time.Duration {
 	return duration
 }
 
-func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
+func (c *Cluster) keyspaces() ([]*Keyspace, int) {
 	total := 0
 	var result []*Keyspace
 
 	for _, k := range c.Keyspaces {
-		tables, err := c.obtainer.ObtainTables(c.Name, k.Name)
+		tables, err := c.tables(k.Name)
 		if err != nil {
 			log.WithError(err).Warn("Tables obtain error")
 			continue
@@ -80,7 +115,7 @@ func (c *Cluster) obtainKeyspaces() ([]*Keyspace, int) {
 		keyspaceTotal := 0
 
 		for _, t := range tables {
-			fragments, err := c.obtainer.ObtainFragments(c.Name, k.Name, t.Slices)
+			fragments, err := c.fragments(k.Name, t.Slices)
 			if err != nil {
 				log.WithError(err).Warn("Fragments obtain error")
 				continue
@@ -116,4 +151,62 @@ func (c *Cluster) sleep() {
 	duration := c.interval()
 	log.WithFields(c).Debug(fmt.Sprintf("Cluster scheduled. Going to sleep for: %s", duration))
 	time.Sleep(duration)
+}
+
+func (c *Cluster) fragments(keyspace string, slices int) ([]*Fragment, error) {
+	tokens, err := c.tokens(keyspace, slices)
+	if err != nil {
+		log.WithError(err).Error("Token obtain error")
+		return nil, err
+	}
+
+	count := len(tokens) * slices
+	frags := make([]*Fragment, 0, count)
+	for _, token := range tokens {
+		for _, frag := range token.Ranges {
+			fragLink := frag
+			frags = append(frags, &fragLink)
+		}
+	}
+	return frags, nil
+}
+
+// Tables returns list of column family in clusters keyspace
+func (c *Cluster) tables(keyspace string) ([]*Table, error) {
+	var result []*Table
+	url := fmt.Sprintf("http://%s:%d/tables/%s", c.Host, c.Port, keyspace)
+	log.Debug(fmt.Sprintf("URL: %s", url))
+
+	resp, err := http.Get(url)
+	if err != nil {
+		log.WithError(err).Error("Failed to obtain column families")
+	}
+
+	if resp != nil {
+		defer resp.Body.Close()
+
+		response, _ := ioutil.ReadAll(resp.Body)
+		err = json.Unmarshal(response, &result)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (c *Cluster) tokens(keyspace string, slices int) (TokenSet, error) {
+	var tokens TokenSet
+	url := fmt.Sprintf("http://%s:%d/ring/%s/%d", c.Host, c.Port, keyspace, slices)
+	res, err := http.Get(url)
+	if err != nil {
+		log.WithError(err).Error("Failed to obtain ring description")
+	}
+
+	if res != nil {
+		defer res.Body.Close()
+		response, _ := ioutil.ReadAll(res.Body)
+		err = json.Unmarshal(response, &tokens)
+	}
+	return tokens, err
 }

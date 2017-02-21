@@ -15,6 +15,9 @@ type Cluster struct {
 	Name      string      `yaml:"name"`
 	Interval  string      `yaml:"interval"`
 	Keyspaces []*Keyspace `yaml:"keyspaces"`
+	Host      string
+	Port      int
+	done      chan bool
 	obtainer  Obtainer
 	regulator Regulator
 	tracker   Tracker
@@ -29,15 +32,8 @@ type ClusterStats struct {
 
 // Config is a configuration file struct
 type Config struct {
-	Conn         *Connector `yaml:"conn"`
 	BufferLength int        `yaml:"buffer"`
 	Clusters     []*Cluster `yaml:"clusters"`
-}
-
-// Connector to repair service
-type Connector struct {
-	Host string
-	Port int
 }
 
 // Fragment of Token range for repair
@@ -166,7 +162,6 @@ type server struct {
 	clusters []*Cluster
 	jobs     chan<- *Repair
 	mux      *http.ServeMux
-	obtainer Obtainer
 	tracker  Tracker
 }
 

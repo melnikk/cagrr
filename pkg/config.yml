@@ -1,10 +1,9 @@
 ---
 buffer: 5
-conn:
-  host: localhost
-  port: 8080
 clusters:
   - name: DevCluster
     interval: 1h
+    host: localhost
+    port: 8080
     keyspaces:
       - name: testspace

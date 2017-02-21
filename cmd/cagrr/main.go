@@ -52,22 +52,22 @@ func main() {
 	regulator := cagrr.NewRegulator(config.BufferLength)
 	tracker := cagrr.NewTracker(consul, regulator)
 	server := cagrr.NewServer(tracker)
-	fixer := cagrr.NewFixer(config.Conn)
 
 	defer database.Close()
 
 	server.ServeAt(opts.ListenAddress)
 
+	done := make(chan bool)
 	for _, cluster := range config.Clusters {
 		go cluster.
-			ObtainBy(config.Conn).
 			RegulateWith(regulator).
 			TrackIn(tracker).
+			Until(done).
 			Schedule(repairs)
+
+		go cluster.Fix(repairs)
 	}
-
-	fixer.Fix(repairs)
-
+	<-done
 }
 
 func init() {

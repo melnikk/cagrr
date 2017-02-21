@@ -59,10 +59,10 @@ type RepairRunner interface {
 
 // Scheduler creates jobs in time
 type Scheduler interface {
-	ObtainBy(Obtainer) Scheduler
 	RegulateWith(Regulator) Scheduler
 	Schedule(chan *Repair)
 	TrackIn(Tracker) Scheduler
+	Until(chan bool) Scheduler
 }
 
 // Server serves repair handlers
