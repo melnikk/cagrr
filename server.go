@@ -16,8 +16,7 @@ const (
 // NewServer initializes loops for scheduling repair jobs
 func NewServer(tracker Tracker) Server {
 	s := server{
-		navigation: &Navigation{},
-		tracker:    tracker,
+		tracker: tracker,
 	}
 	return &s
 }
@@ -26,17 +25,6 @@ func (s *server) ServeAt(callback string) Server {
 	s.callback = callback
 	go s.startServer()
 	return s
-}
-
-func (s *server) handleNavigate(w http.ResponseWriter, req *http.Request) {
-	var nav Navigation
-	body, _ := ioutil.ReadAll(req.Body)
-	var status RepairStatus
-	err := json.Unmarshal(body, &status)
-	if err != nil {
-		log.WithError(err).Warn(fmt.Sprintf("Invalid navigation received: %s", string(body)))
-	}
-	s.navigation = &nav
 }
 
 func (s *server) handleRepairStatus(w http.ResponseWriter, req *http.Request) {
@@ -85,7 +73,6 @@ func (s *server) startServer() {
 
 		s.mux = http.NewServeMux()
 		s.mux.Handle("/status", http.HandlerFunc(s.handleRepairStatus))
-		s.mux.Handle("/nav", http.HandlerFunc(s.handleNavigate))
 		log.Fatal(http.ListenAndServe(s.callback, s.mux))
 	}
 }
