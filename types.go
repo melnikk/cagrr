@@ -22,9 +22,9 @@ type Cluster struct {
 
 // ClusterStats for logging
 type ClusterStats struct {
-	Cluster         string
-	ClusterDuration time.Duration
-	LastSuccess     time.Time
+	Cluster            string
+	ClusterDuration    time.Duration
+	LastClusterSuccess time.Time
 }
 
 // Config is a configuration file struct
@@ -68,30 +68,31 @@ type Repair struct {
 
 // RepairStats for logging
 type RepairStats struct {
-	Cluster           string
-	Keyspace          string
-	Table             string
-	ID                int
-	Duration          time.Duration
-	Rate              time.Duration
-	TableTotal        int
-	TableCompleted    int
-	TablePercent      float32
-	TableDuration     time.Duration
-	TableAverage      time.Duration
-	TableEstimate     time.Duration
-	KeyspaceTotal     int
-	KeyspaceCompleted int
-	KeyspacePercent   float32
-	KeyspaceDuration  time.Duration
-	KeyspaceAverage   time.Duration
-	KeyspaceEstimate  time.Duration
-	ClusterTotal      int
-	ClusterCompleted  int
-	ClusterPercent    float32
-	ClusterDuration   time.Duration
-	ClusterAverage    time.Duration
-	ClusterEstimate   time.Duration
+	Cluster            string
+	Keyspace           string
+	Table              string
+	ID                 int
+	Duration           time.Duration
+	Rate               time.Duration
+	TableTotal         int
+	TableCompleted     int
+	TablePercent       float32
+	TableDuration      time.Duration
+	TableAverage       time.Duration
+	TableEstimate      time.Duration
+	KeyspaceTotal      int
+	KeyspaceCompleted  int
+	KeyspacePercent    float32
+	KeyspaceDuration   time.Duration
+	KeyspaceAverage    time.Duration
+	KeyspaceEstimate   time.Duration
+	ClusterTotal       int
+	ClusterCompleted   int
+	ClusterPercent     float32
+	ClusterDuration    time.Duration
+	ClusterAverage     time.Duration
+	ClusterEstimate    time.Duration
+	LastClusterSuccess time.Time
 }
 
 // RepairStatus keeps status of repair

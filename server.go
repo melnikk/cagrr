@@ -51,9 +51,9 @@ func (s *server) processComplete(status RepairStatus) {
 	if stats.ClusterPercent == 100 {
 		duration := int64(stats.ClusterAverage) * int64(stats.ClusterCompleted)
 		clusterStats := &ClusterStats{
-			Cluster:         stats.Cluster,
-			ClusterDuration: time.Duration(duration),
-			LastSuccess:     time.Now(),
+			Cluster:            stats.Cluster,
+			ClusterDuration:    time.Duration(duration),
+			LastClusterSuccess: time.Now(),
 		}
 		log.WithFields(clusterStats).Info("Cluster completed")
 	}
