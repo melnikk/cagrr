@@ -1,7 +1,7 @@
 package cagrr_test
 
 import (
-	. "github.com/skbkontur/cagrr"
+	. "github.com/skbkontur/cagrr/cagrr"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

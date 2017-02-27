@@ -1,7 +1,7 @@
 package cagrr_test
 
 import (
-	. "github.com/skbkontur/cagrr"
+	. "github.com/skbkontur/cagrr/cagrr"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -9,7 +9,7 @@ import (
 
 var _ = Describe("Config", func() {
 	Context("File exist", func() {
-		_, err := ReadConfiguration("pkg/config.yml")
+		_, err := ReadConfiguration("../pkg/config.yml")
 		It("Should not return error", func() {
 			Expect(err).To(BeNil())
 		})

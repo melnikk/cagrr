@@ -19,28 +19,28 @@ install:
 script:
 - make packages
 
-notifications:
-  webhooks:
-    urls:
-    - https://webhooks.gitter.im/e/a85da9d6e9900584075a
-    on_success: change
-    on_failure: always
-    on_start: never
+#notifications:
+#  webhooks:
+#    urls:
+#    - https://webhooks.gitter.im/e/a85da9d6e9900584075a
+#    on_success: change
+#    on_failure: always
+#    on_start: never
+#
+#before_deploy:
+#- export RELEASE_PKG_TAR=$(ls build/cagrr*.tar.gz)
+#- export RELEASE_PKG_RPM=$(ls build/cagrr*.rpm)
+#- export RELEASE_PKG_DEB=$(ls build/cagrr*.deb)
 
-before_deploy:
-- export RELEASE_PKG_TAR=$(ls build/cagrr*.tar.gz)
-- export RELEASE_PKG_RPM=$(ls build/cagrr*.rpm)
-- export RELEASE_PKG_DEB=$(ls build/cagrr*.deb)
-
-deploy:
-  provider: releases
-  api_key:
-    secure: IjaK7AABiiOt2PehU66dROBpyNUWrYQAXnxe0houOa8nuesbX41SAZl1xHpjeHQDzg4/26S8A+Dmiwy0L+ExBoIkRbEOR3ZoZYgzpEKDlGstGCc+yp6bgXXKEWcVofaB5fcTFim9N/G/mWqNvEezWayLnTVkzgDObNBY1XCSooEBfZqTD1FKWUZVstI30HdvGFBpcp+rUqbhtQnEnHO4CSYtXszTBM1yN7M7CoptckTNFei79t+B3Wf0vEjEAcysX7OXsWykGmj8sBT3Jz3ocMLeGfzrP+IGaImUuQgaixgZJiBpzLtQaVCyAm/hbRxu+hx2Y3RjC+vo5Gd86pwu9ddS5XhOsdWH7Hz34ljEZQiHg2JgB4sbuNWXWM/Ryce6BRcM4SjN6gEMwKP3iUlaclSlXyJNGEgbrRgwNSeZKjDqVuOFEQIB4H98+66nLMMyv7IwA97SRs8QRrCPyIoqrBZfENQnGYxhLRvf+t1XQjgjYmvrGEXEiSKlkFvNGd7Hb1F34lamoi534nN0OBpQl0qZ3koTtnWBnHumpa5bM0R/oq4qAQ8ysqYJ7d/9WdWZpLJOiEjqmCJTYyTCG8f9Sz8XuqEv3wiBO11fXlB0OD5R9sevTs6o2QfSSib8QV37WG8ntvEE7e7b8NVTOdo67IXMTaOPvRkmCXp+HsDxRjY=
-  file:
-    - "${RELEASE_PKG_TAR}"
-    - "${RELEASE_PKG_DEB}"
-    - "${RELEASE_PKG_RPM}"
-  skip_cleanup: true
-  on:
-    repo: skbkontur/cagrr
-    tags: true
+#deploy:
+#  provider: releases
+#  api_key:
+#    secure: IjaK7AABiiOt2PehU66dROBpyNUWrYQAXnxe0houOa8nuesbX41SAZl1xHpjeHQDzg4/26S8A+Dmiwy0L+ExBoIkRbEOR3ZoZYgzpEKDlGstGCc+yp6bgXXKEWcVofaB5fcTFim9N/G/mWqNvEezWayLnTVkzgDObNBY1XCSooEBfZqTD1FKWUZVstI30HdvGFBpcp+rUqbhtQnEnHO4CSYtXszTBM1yN7M7CoptckTNFei79t+B3Wf0vEjEAcysX7OXsWykGmj8sBT3Jz3ocMLeGfzrP+IGaImUuQgaixgZJiBpzLtQaVCyAm/hbRxu+hx2Y3RjC+vo5Gd86pwu9ddS5XhOsdWH7Hz34ljEZQiHg2JgB4sbuNWXWM/Ryce6BRcM4SjN6gEMwKP3iUlaclSlXyJNGEgbrRgwNSeZKjDqVuOFEQIB4H98+66nLMMyv7IwA97SRs8QRrCPyIoqrBZfENQnGYxhLRvf+t1XQjgjYmvrGEXEiSKlkFvNGd7Hb1F34lamoi534nN0OBpQl0qZ3koTtnWBnHumpa5bM0R/oq4qAQ8ysqYJ7d/9WdWZpLJOiEjqmCJTYyTCG8f9Sz8XuqEv3wiBO11fXlB0OD5R9sevTs6o2QfSSib8QV37WG8ntvEE7e7b8NVTOdo67IXMTaOPvRkmCXp+HsDxRjY=
+#  file:
+#    - "${RELEASE_PKG_TAR}"
+#    - "${RELEASE_PKG_DEB}"
+#    - "${RELEASE_PKG_RPM}"
+#  skip_cleanup: true
+#  on:
+#    repo: skbkontur/cagrr
+#    tags: true
