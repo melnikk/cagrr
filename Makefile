@@ -30,10 +30,10 @@ integration:
 
 build:
 	mkdir build
-	cd cmd/cagrr && go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
+	go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
 
 run:
-	go run cmd/cagrr/main.go -v debug
+	go run main.go -v debug
 
 up: clean prepare build run
 
@@ -51,7 +51,7 @@ tar:
 rpm:
 	fpm -t rpm \
 		-s "tar" \
-		--description "Cassandra Go Range Repair" \
+		--description "Cassandra Go Range Repair Scheduler" \
 		--vendor $(VENDOR) \
 		--url $(URL) \
 		--license $(LICENSE) \
@@ -66,7 +66,7 @@ rpm:
 deb:
 	fpm -t deb \
 		-s "tar" \
-		--description "Cassandra Go Range Repair" \
+		--description "Cassandra Go Range Repair Scheduler" \
 		--vendor $(VENDOR) \
 		--url $(URL) \
 		--license $(LICENSE) \

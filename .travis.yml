@@ -16,8 +16,8 @@ install:
 - $HOME/gopath/bin/gover
 - $HOME/gopath/bin/goveralls -coverprofile=gover.coverprofile -service=travis-ci -repotoken $COVERALLS_TOKEN
 
-script:
-- make packages
+#script:
+#- make packages
 
 #notifications:
 #  webhooks:
