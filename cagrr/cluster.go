@@ -60,7 +60,7 @@ func (c *Cluster) Schedule() {
 					}
 					c.tracker.Start(c.Name, k.Name, t.Name, r.ID)
 					c.RunRepair(r)
-					c.regulator.Limit(c.Name)
+					//c.regulator.Limit(c.Name)
 				}
 			}
 		}

@@ -9,7 +9,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/skbkontur/cagrr"
+	"github.com/skbkontur/cagrr/cagrr"
 )
 
 var version = "devel"
