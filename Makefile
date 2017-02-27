@@ -30,7 +30,7 @@ integration:
 
 build:
 	mkdir build
-	go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o ../../build/cagrr
+	go build -ldflags "-X main.version=$(VERSION)-$(RELEASE)" -o build/cagrr
 
 run:
 	go run main.go -v debug
@@ -42,7 +42,7 @@ tar:
 	mkdir -p build/root/usr/lib/systemd/system
 	mkdir -p build/root/etc/cagrr
 
-	mv build/cagrr build/root/usr/local/bin/
+	mv build/cagrr build/root/usr/local/bin/cagrr
 	cp pkg/cagrr.service build/root/usr/lib/systemd/system/cagrr.service
 	cp pkg/config.yml build/root/etc/cagrr/config.yml
 
