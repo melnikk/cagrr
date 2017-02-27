@@ -32,6 +32,7 @@ type ClusterStats struct {
 // Config is a configuration file struct
 type Config struct {
 	BufferLength int        `yaml:"buffer"`
+	ConsulHost   string     `yaml:"consul_host"`
 	Clusters     []*Cluster `yaml:"clusters"`
 }
 

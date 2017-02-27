@@ -40,7 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	consul := cagrr.NewConsulDb()
+	consul := cagrr.NewConsulDb(config.ConsulHost)
 	//redis := cagrr.NewRedisDb("localhost:6379")
 	database := consul
 	regulator := cagrr.NewRegulator(config.BufferLength)

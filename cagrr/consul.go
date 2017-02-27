@@ -7,10 +7,12 @@ import (
 )
 
 // NewConsulDb connects to DB
-func NewConsulDb() DB {
+func NewConsulDb(host string) DB {
 	instance := consulDB{}
 	var err error
-	instance.db, err = api.NewClient(api.DefaultConfig())
+	config := api.DefaultConfig()
+	config.Address = host
+	instance.db, err = api.NewClient(config)
 	if err != nil {
 		panic(err)
 	}

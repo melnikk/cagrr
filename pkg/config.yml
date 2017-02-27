@@ -1,5 +1,6 @@
 ---
 buffer: 5
+consul_host: localhost
 clusters:
   - name: DevCluster
     interval: 1h
