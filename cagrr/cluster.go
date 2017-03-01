@@ -54,7 +54,6 @@ func (c *Cluster) Schedule() {
 				for _, r := range t.Repairs() {
 
 					if c.tracker.IsCompleted(c.Name, k.Name, t.Name, r.ID, c.interval()) {
-						log.WithFields(r).Debug("Repair already completed")
 						c.tracker.Skip(c.Name, k.Name, t.Name, r.ID)
 						continue
 					}
