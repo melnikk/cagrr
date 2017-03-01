@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -24,6 +25,10 @@ func (c *Cluster) RunRepair(repair *Repair) error {
 	buf, _ := json.Marshal(repair)
 	body := bytes.NewBuffer(buf)
 	res, err := http.Post(url, "application/json", body)
+	if err != nil {
+		log.WithError(err).WithFields(repair).Error("Fail to send request")
+		os.Exit(1)
+	}
 	if res != nil {
 		defer res.Body.Close()
 		if res.StatusCode != 200 {
