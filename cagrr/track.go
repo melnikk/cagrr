@@ -12,11 +12,14 @@ func (t *Track) CheckCompletion() {
 }
 
 // Complete repair fragment
-func (t *Track) Complete(duration time.Duration) (int, int, time.Duration, float32, time.Duration, time.Duration) {
+func (t *Track) Complete(duration time.Duration, err bool) (int, int, time.Duration, float32, time.Duration, time.Duration) {
 	start := t.Started
 	now := time.Now()
 
 	t.Count++
+	if err {
+		t.Errors++
+	}
 	t.Duration = now.Sub(start) + duration
 	t.Average = t.average()
 	t.Estimate = t.estimate(t.Average)
@@ -48,6 +51,7 @@ func (t *Track) IsSpoiled(threshold time.Duration) bool {
 // Restart track
 func (t *Track) Restart() {
 	t.Count = 0
+	t.Errors = 0
 	t.Completed = false
 }
 
@@ -61,6 +65,7 @@ func (t *Track) Skip() {
 func (t *Track) Start(total int) {
 	t.Started = time.Now()
 	t.Count = 0
+	t.Errors = 0
 	t.Total = total
 	t.Completed = false
 }

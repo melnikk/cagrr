@@ -30,15 +30,16 @@ var _ = Describe("Track", func() {
 
 		Context("completion", func() {
 			It("should increment percent", func() {
-				track.Complete(time.Duration(0))
+				err := false
+				track.Complete(time.Duration(0), err)
 				Expect(track.Percent).To(BeNumerically("==", 20))
-				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0), err)
 				Expect(track.Percent).To(BeNumerically("==", 40))
-				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0), err)
 				Expect(track.Percent).To(BeNumerically("==", 60))
-				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0), err)
 				Expect(track.Percent).To(BeNumerically("==", 80))
-				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0), err)
 				Expect(track.Percent).To(BeNumerically("==", 100))
 			})
 		})
@@ -58,12 +59,13 @@ var _ = Describe("Track", func() {
 		})
 		Context("completed", func() {
 			BeforeEach(func() {
+				err := false
 				track.Start(5)
-				track.Complete(time.Duration(0))
-				track.Complete(time.Duration(0))
-				track.Complete(time.Duration(0))
-				track.Complete(time.Duration(0))
-				track.Complete(time.Duration(0))
+				track.Complete(time.Duration(0), err)
+				track.Complete(time.Duration(0), err)
+				track.Complete(time.Duration(0), err)
+				track.Complete(time.Duration(0), err)
+				track.Complete(time.Duration(0), err)
 			})
 			It("should be repaired", func() {
 				isRepaired := track.IsRepaired(time.Second * 1000)

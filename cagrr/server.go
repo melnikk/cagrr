@@ -45,7 +45,7 @@ func (s *server) processComplete(status RepairStatus) {
 	table := repair.Table
 	id := repair.ID
 
-	stats := s.tracker.Complete(cluster, keyspace, table, id)
+	stats := s.tracker.Complete(cluster, keyspace, table, id, false)
 	log.WithFields(stats).Info(status.Message)
 
 	if stats.ClusterPercent == 100 {

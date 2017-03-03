@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -27,7 +26,6 @@ func (c *Cluster) RunRepair(repair *Repair) error {
 	res, err := http.Post(url, "application/json", body)
 	if err != nil {
 		log.WithError(err).WithFields(repair).Error("Fail to send request")
-		os.Exit(1)
 	}
 	if res != nil {
 		defer res.Body.Close()
@@ -63,13 +61,17 @@ func (c *Cluster) Schedule() {
 						continue
 					}
 					c.tracker.Start(c.Name, k.Name, t.Name, r.ID)
-					c.RunRepair(r)
-					//c.regulator.Limit(c.Name)
+					err := c.RunRepair(r)
+					if err != nil {
+						c.tracker.TrackError(c.Name, k.Name, t.Name, r.ID)
+					}
 				}
 			}
 		}
 
-		c.sleep()
+		if !c.tracker.HasErrors(c.Name) {
+			c.sleep()
+		}
 	}
 }
 

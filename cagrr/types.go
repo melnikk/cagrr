@@ -121,6 +121,7 @@ type TokenSet []Token
 type Track struct {
 	Completed bool
 	Count     int
+	Errors    int
 	Total     int
 	Percent   float32
 	Duration  time.Duration

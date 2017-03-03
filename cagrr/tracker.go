@@ -21,27 +21,27 @@ func NewTracker(db DB, r Regulator) Tracker {
 }
 
 // Complete repair and returns statistics
-func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats {
+func (t *tracker) Complete(cluster, keyspace, table string, id int, err bool) *RepairStats {
 	ck, kk, tk, rk := t.keys(cluster, keyspace, table, id)
 
 	track := t.readTrack(rk)
-	_, _, _, _, _, rd := track.Complete(time.Duration(0))
+	_, _, _, _, _, rd := track.Complete(time.Duration(0), err)
 	rate := t.regulator.LimitRateTo(cluster, rd)
 	track.Rate = rate
 	t.writeTrack(rk, track)
 
 	track = t.readTrack(tk)
-	tt, tc, ta, tp, te, td := track.Complete(rd)
+	tt, tc, ta, tp, te, td := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(tk, track)
 
 	track = t.readTrack(kk)
-	kt, kc, ka, kp, ke, kd := track.Complete(rd)
+	kt, kc, ka, kp, ke, kd := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(kk, track)
 
 	track = t.readTrack(ck)
-	ct, cc, ca, cp, ce, cd := track.Complete(rd)
+	ct, cc, ca, cp, ce, cd := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(ck, track)
 
@@ -73,6 +73,12 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int) *RepairStats
 		LastClusterSuccess: track.Finished,
 	}
 
+}
+
+func (t *tracker) HasErrors(vars ...string) bool {
+	key := t.db.CreateKey(vars...)
+	track := t.readTrack(key)
+	return track.Errors > 0
 }
 
 // IsCompleted check fragment completion
@@ -128,6 +134,10 @@ func (t *tracker) StartTable(cluster, keyspace, table string, total int) {
 	t.start(key, total)
 }
 
+func (t *tracker) TrackError(cluster, keyspace, table string, id int) {
+	t.Complete(cluster, keyspace, table, id, true)
+}
+
 func (t *tracker) readTrack(key string) *Track {
 	var track Track
 	value := t.db.ReadValue(tableName, key)
@@ -150,6 +160,8 @@ func (t *tracker) keys(cluster, keyspace, table string, row int) (string, string
 
 func (t *tracker) start(key string, total int) {
 	track := t.readTrack(key)
-	track.Start(total)
-	t.writeTrack(key, track)
+	if track.IsNew() || track.Completed {
+		track.Start(total)
+		t.writeTrack(key, track)
+	}
 }
