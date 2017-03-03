@@ -158,7 +158,6 @@ type regulator struct {
 type server struct {
 	callback string
 	clusters []*Cluster
-	jobs     chan<- *Repair
 	mux      *http.ServeMux
 	tracker  Tracker
 }

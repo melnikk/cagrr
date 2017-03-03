@@ -48,13 +48,6 @@ func (t *Track) IsSpoiled(threshold time.Duration) bool {
 	return duration > threshold
 }
 
-// Restart track
-func (t *Track) Restart() {
-	t.Count = 0
-	t.Errors = 0
-	t.Completed = false
-}
-
 // Skip track
 func (t *Track) Skip() {
 	t.Count++

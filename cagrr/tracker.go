@@ -90,13 +90,6 @@ func (t *tracker) IsCompleted(cluster, keyspace, table string, id int, threshold
 	return track.IsRepaired(threshold)
 }
 
-func (t *tracker) Restart(cluster, keyspace, table string, id int) {
-	key := t.db.CreateKey(cluster, keyspace, table, strconv.Itoa(id))
-	track := t.readTrack(key)
-	track.Restart()
-	t.writeTrack(key, track)
-}
-
 func (t *tracker) Skip(cluster, keyspace, table string, id int) {
 
 	ck, kk, tk, _ := t.keys(cluster, keyspace, table, id)

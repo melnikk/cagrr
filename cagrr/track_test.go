@@ -72,12 +72,6 @@ var _ = Describe("Track", func() {
 				Expect(isRepaired).To(BeTrue())
 			})
 
-			It("should restart", func() {
-				track.Restart()
-				isRepaired := track.IsRepaired(time.Second * 1000)
-				Expect(isRepaired).To(BeFalse())
-			})
-
 		})
 
 	})

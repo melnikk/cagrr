@@ -62,8 +62,7 @@ func (s *server) processComplete(status RepairStatus) {
 
 func (s *server) processFail(status RepairStatus) {
 	repair := status.Repair
-	s.tracker.Restart(repair.Cluster, repair.Keyspace, repair.Table, repair.ID)
-	s.jobs <- &repair
+	s.tracker.TrackError(repair.Cluster, repair.Keyspace, repair.Table, repair.ID)
 }
 
 func (s *server) startServer() {
