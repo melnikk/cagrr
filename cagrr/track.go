@@ -12,21 +12,22 @@ func (t *Track) CheckCompletion() {
 }
 
 // Complete repair fragment
-func (t *Track) Complete(duration time.Duration, err bool) (int, int, time.Duration, float32, time.Duration, time.Duration) {
+func (t *Track) Complete(duration time.Duration, err bool) (int, int, int, time.Duration, float32, time.Duration, time.Duration) {
 	start := t.Started
 	now := time.Now()
 
-	t.Count++
-	if err {
-		t.Errors++
-	}
 	t.Duration = now.Sub(start) + duration
 	t.Average = t.average()
 	t.Estimate = t.estimate(t.Average)
 
-	t.CheckCompletion()
+	if err {
+		t.Errors++
+	} else {
+		t.Count++
+		t.CheckCompletion()
+	}
 
-	return t.Total, t.Count, t.Average, t.Percent, t.Estimate, t.Duration
+	return t.Total, t.Count, t.Errors, t.Average, t.Percent, t.Estimate, t.Duration
 }
 
 // IsRepaired is check for repair completeness

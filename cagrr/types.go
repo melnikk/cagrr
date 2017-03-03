@@ -72,18 +72,21 @@ type RepairStats struct {
 	Rate               time.Duration
 	TableTotal         int
 	TableCompleted     int
+	TableErrors        int
 	TablePercent       float32
 	TableDuration      time.Duration
 	TableAverage       time.Duration
 	TableEstimate      time.Duration
 	KeyspaceTotal      int
 	KeyspaceCompleted  int
+	KeyspaceErrors     int
 	KeyspacePercent    float32
 	KeyspaceDuration   time.Duration
 	KeyspaceAverage    time.Duration
 	KeyspaceEstimate   time.Duration
 	ClusterTotal       int
 	ClusterCompleted   int
+	ClusterErrors      int
 	ClusterPercent     float32
 	ClusterDuration    time.Duration
 	ClusterAverage     time.Duration

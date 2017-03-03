@@ -25,23 +25,23 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int, err bool) *R
 	ck, kk, tk, rk := t.keys(cluster, keyspace, table, id)
 
 	track := t.readTrack(rk)
-	_, _, _, _, _, rd := track.Complete(time.Duration(0), err)
+	_, _, _, _, _, _, rd := track.Complete(time.Duration(0), err)
 	rate := t.regulator.LimitRateTo(cluster, rd)
 	track.Rate = rate
 	t.writeTrack(rk, track)
 
 	track = t.readTrack(tk)
-	tt, tc, ta, tp, te, td := track.Complete(rd, err)
+	tt, tc, terr, ta, tp, te, td := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(tk, track)
 
 	track = t.readTrack(kk)
-	kt, kc, ka, kp, ke, kd := track.Complete(rd, err)
+	kt, kc, kerr, ka, kp, ke, kd := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(kk, track)
 
 	track = t.readTrack(ck)
-	ct, cc, ca, cp, ce, cd := track.Complete(rd, err)
+	ct, cc, cerr, ca, cp, ce, cd := track.Complete(rd, err)
 	track.Rate = rate
 	t.writeTrack(ck, track)
 
@@ -54,18 +54,21 @@ func (t *tracker) Complete(cluster, keyspace, table string, id int, err bool) *R
 		Rate:               rate,
 		TableTotal:         tt,
 		TableCompleted:     tc,
+		TableErrors:        terr,
 		TablePercent:       tp,
 		TableDuration:      td,
 		TableAverage:       ta,
 		TableEstimate:      te,
 		KeyspaceTotal:      kt,
 		KeyspaceCompleted:  kc,
+		KeyspaceErrors:     kerr,
 		KeyspacePercent:    kp,
 		KeyspaceDuration:   kd,
 		KeyspaceAverage:    ka,
 		KeyspaceEstimate:   ke,
 		ClusterTotal:       ct,
 		ClusterCompleted:   cc,
+		ClusterErrors:      cerr,
 		ClusterPercent:     cp,
 		ClusterDuration:    cd,
 		ClusterAverage:     ca,
